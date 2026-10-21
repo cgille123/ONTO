@@ -1,6 +1,14 @@
 // Browser/PWA adapter; replaces the macOS WKWebView-only native bridge.
 (() => {
   const $ = s => document.querySelector(s);
+  // UI-only state: intentionally not persisted; always starts collapsed.
+  const dock = $('#bottom-dock');
+  const dockToggle = $('#dock-toggle');
+  dockToggle.addEventListener('click', () => {
+    const expanded = dock.classList.toggle('dock-collapsed') === false;
+    dockToggle.setAttribute('aria-expanded', String(expanded));
+    dockToggle.setAttribute('aria-label', expanded ? 'Collapse view controls' : 'Expand view controls');
+  });
   const storageLabel = $('#storage');
   if (storageLabel) storageLabel.textContent = 'Saved on this device · Export for a backup';
   $('#export').addEventListener('click', () => {

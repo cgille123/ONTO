@@ -134,3 +134,11 @@ main{max-width:none;padding:0 24px}
   #bottom-dock .panel-label{flex-basis:60px;font-size:13px}
   #bottom-dock .filter select{font-size:13px}
 }
+
+/* ONTO VIEW: one anchored toggle, collapsed at every launch on all devices. */
+#bottom-dock{display:flex;flex-direction:column;align-items:stretch}
+#dock-toggle{align-self:flex-end;margin-top:9px;min-height:36px;min-width:66px;padding:5px 12px;border-radius:10px;background:#33475d;color:#f7fbff;font-size:13px;font-weight:750;letter-spacing:.7px;border:1px solid #7188a3}
+#bottom-dock.dock-collapsed{width:auto;padding:6px;border-radius:14px}
+#bottom-dock.dock-collapsed .dock-inner{display:none}
+#bottom-dock.dock-collapsed #dock-toggle{margin:0}
+#board-scroll{padding-bottom:calc(var(--dock-height) + 28px)}
