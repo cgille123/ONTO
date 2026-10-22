@@ -52,6 +52,32 @@
       if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
     }
   });
+  // Temporary iOS diagnostic: observe the native download -> import interaction.
+  // Capture-phase listeners do not alter normal event handling.
+  const traceBox = document.createElement('div');
+  traceBox.id = 'onto-import-trace';
+  traceBox.setAttribute('aria-live', 'polite');
+  traceBox.innerHTML = '<strong>IMPORT TRACE</strong> <button type="button" id="onto-trace-close">×</button><pre id="onto-trace-lines"></pre>';
+  document.body.appendChild(traceBox);
+  const traceLines = traceBox.querySelector('pre');
+  let traces = [];
+  const trace = label => { traces.push(label); traces = traces.slice(-12); traceLines.textContent = traces.join('\n'); };
+  traceBox.querySelector('button').addEventListener('click', () => traceBox.remove());
+  const targetName = el => el?.id || el?.closest?.('#import')?.id || el?.tagName || '?';
+  for (const type of ['pointerdown','touchstart','click']) {
+    document.addEventListener(type, event => {
+      if (event.target.closest?.('#onto-import-trace')) return;
+      if (event.target.closest?.('#import,#export,#file,#restore-before-import')) trace(type + ': ' + targetName(event.target));
+    }, true);
+  }
+  $('#file').addEventListener('click', () => trace('file input click'), true);
+  $('#file').addEventListener('change', e => trace('file change: ' + (e.target.files?.length || 0)), true);
+  $('#file').addEventListener('cancel', () => trace('file picker cancel'), true);
+  document.addEventListener('visibilitychange', () => trace('visibility: ' + document.visibilityState));
+  window.addEventListener('pageshow', () => trace('pageshow'));
+  window.addEventListener('focus', () => trace('window focus'));
+  window.addEventListener('blur', () => trace('window blur'));
+  trace('ready; import=' + !!$('#import') + '; file=' + !!$('#file'));
   // iOS: native user-initiated file input inside the visible Import label.
   // Avoid programmatic input.click(), which may be blocked after a download sheet.
   $('#file').addEventListener('change', async event => {
