@@ -499,3 +499,10 @@ body > main > .dock-buttons{pointer-events:auto!important}
   display:block;order:initial;width:100%;margin:0;
   font-size:11px;line-height:1.35;color:#a7b8ce;
 }
+
+/* Supporter preview: compact Board Options status, no extra popups. */
+.onto-plan{display:flex;flex-wrap:wrap;gap:7px 14px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(150,170,200,.18);font-size:12px}
+.onto-plan #plan-status{font-weight:700}
+.onto-plan-preview{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.onto-plan-preview input{width:15px;height:15px;margin:0}
+.onto-plan small{flex-basis:100%;font-size:11px;opacity:.75;line-height:1.35}
