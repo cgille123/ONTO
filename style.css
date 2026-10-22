@@ -340,3 +340,19 @@ body > main > .dock-buttons{pointer-events:auto!important}
 #grid .tile[data-w="1"] .tile-status{font-size:clamp(8px,.9vw,11px)!important}
 #grid .tile .status-dot{display:none!important}
 @media(max-width:540px){body > main > .dock-buttons{right:14px;bottom:calc(14px + env(safe-area-inset-bottom))}body > main > .dock-buttons button{min-width:78px;font-size:11px}}
+
+/* iPhone portrait: fixed-size hoverboard, stable footer, two-row WHEN choices. */
+@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+ #tray{box-sizing:border-box!important;width:min(340px,calc(100vw - 20px))!important;height:258px!important;min-height:258px!important;max-height:258px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:9px 11px!important}
+ #tray[hidden]{display:none!important}
+ #tray .tray-top{flex:0 0 auto!important}
+ #tray .tray-top #tray-title{margin:0 0 5px!important;line-height:1.1!important}
+ #tray .segments{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important}
+ #tray .segments button{font-size:9px!important;min-width:0!important;padding:7px 0!important;letter-spacing:-.2px!important}
+ #tray #attributes,#tray #attributes:not(.size-picker):not(.color-picker),#tray #attributes.size-picker,#tray #attributes.color-picker{box-sizing:border-box!important;flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;align-content:start!important;margin:5px 0 0!important}
+ #tray #attributes:not(.size-picker):not(.color-picker){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ #tray #attributes:not(.size-picker):not(.color-picker) button{min-width:0!important;width:100%!important;min-height:35px!important;padding:5px 3px!important;text-align:center!important;font-size:11px!important;white-space:normal!important;overflow-wrap:break-word!important}
+ #tray #attributes:has(button[data-attribute="__pickdate__"]){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #tray .tray-bottom{position:static!important;flex:0 0 33px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;margin-top:5px!important;padding:0!important}
+ #tray #tray-confirmation{flex:0 0 auto!important;max-height:18px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;font-size:9px!important}
+}
