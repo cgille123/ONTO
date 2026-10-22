@@ -35,6 +35,42 @@
     catch (_) { restoreButton.hidden = true; }
   }
   refreshRecovery();
+  const autoRestoreButton=document.createElement('button');
+  autoRestoreButton.type='button';
+  autoRestoreButton.id='restore-auto-backup';
+  autoRestoreButton.textContent='Restore earlier board';
+  restoreButton.after(autoRestoreButton);
+  function readAutoSnapshots(){
+    const raw=localStorage.getItem('onto-auto-snapshots-v1');
+    const entries=raw?JSON.parse(raw):[];
+    if(!Array.isArray(entries))throw Error('Invalid recovery history.');
+    return entries.filter(entry=>Number.isFinite(entry.at)&&entry.board).slice(0,3);
+  }
+  function refreshAutoRestore(){
+    try{autoRestoreButton.hidden=readAutoSnapshots().length===0;}
+    catch(_){autoRestoreButton.hidden=true;}
+  }
+  refreshAutoRestore();
+  autoRestoreButton.addEventListener('click',()=>{
+    try{
+      const entries=readAutoSnapshots();
+      if(!entries.length){refreshAutoRestore();return;}
+      const choices=entries.map((entry,index)=>(index+1)+'. '+new Date(entry.at).toLocaleString()).join('\n');
+      const selection=prompt('Restore an earlier local board snapshot. Enter its number:\n'+choices);
+      if(selection===null)return;
+      if(!/^[1-3]$/.test(selection.trim())||Number(selection)>entries.length){message('Choose a listed snapshot number.');return;}
+      const recovered=validate(entries[Number(selection)-1].board);
+      if(!confirm('Replace your current board with this snapshot? Export your current board first if you need to keep it.'))return;
+      const before=clone(state);
+      // Preserve a separate undo point before replacing the active board.
+      localStorage.setItem(RECOVERY_KEY,JSON.stringify(before));
+      localStorage.setItem(KEY,JSON.stringify(recovered));
+      state=recovered;
+      returnToNow();categoryFilter='';statusFilter='';whenFilter='';
+      render();refreshRecovery();refreshAutoRestore();
+      message('Earlier board restored. Previous board kept as pre-import recovery.',before);
+    }catch(error){message('Could not restore snapshot: '+error.message);}
+  });
   // On iOS, use the native Share sheet for a JSON file instead of opening
   // Safari's download preview, which can strand the subsequent file picker.
   // Desktop/unsupported browsers retain the existing download behavior.
