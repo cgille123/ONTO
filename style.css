@@ -444,3 +444,6 @@ body > main > .dock-buttons{pointer-events:auto!important}
 #onto-import-trace{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;z-index:999999;width:min(330px,calc(100vw - 16px));max-height:170px;overflow:auto;background:#08121bf2;border:1px solid #b5fa61;border-radius:9px;padding:7px 10px;color:#e4f5db;font:11px/1.25 monospace;box-shadow:0 5px 22px #0009;pointer-events:none}
 #onto-import-trace button{float:right;pointer-events:auto;min-height:22px;padding:0 7px;font-size:14px}
 #onto-import-trace pre{margin:5px 0 0;white-space:pre-wrap}
+
+/* Paste Backup: compact, scrollable dialog for mobile and desktop. */
+#paste-backup-dialog{max-width:min(92vw,560px);max-height:85dvh;overflow:auto}#paste-backup-dialog .paste-backup-form{display:flex;flex-direction:column;gap:12px}#paste-backup-text{width:100%;min-height:170px;box-sizing:border-box;font:16px/1.4 ui-monospace,monospace;resize:vertical}#paste-backup-dialog .edit-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}

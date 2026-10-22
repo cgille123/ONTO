@@ -30,6 +30,11 @@
   restoreButton.textContent = 'Restore pre-import backup';
   restoreButton.hidden = true;
   $('#import').after(restoreButton);
+  const pasteButton = document.createElement('button');
+  pasteButton.type = 'button';
+  pasteButton.id = 'paste-backup';
+  pasteButton.textContent = 'Paste Backup';
+  restoreButton.before(pasteButton);
   function refreshRecovery() {
     try { restoreButton.hidden = !localStorage.getItem(RECOVERY_KEY); }
     catch (_) { restoreButton.hidden = true; }
@@ -97,9 +102,13 @@
     if (document.visibilityState === 'visible') { pickerOpen = false; setTimeout(rearmImport, 250); }
   });
   async function importBoardFile(file) {
+    if (file.size > MAX_IMPORT_BYTES) { message('Could not import: File exceeds 10 MB.'); return; }
+    await importBoardText(await file.text());
+  }
+  async function importBoardText(text) {
     try {
-      if (file.size > MAX_IMPORT_BYTES) throw Error('File exceeds 10 MB.');
-      const incoming = validate(JSON.parse(await file.text()));
+      if (new Blob([text]).size > MAX_IMPORT_BYTES) throw Error('Backup exceeds 10 MB.');
+      const incoming = validate(JSON.parse(text));
       if (state.items.length && !confirm('Import replaces this device’s current board. Save an exported backup first. Continue?')) return;
       const before = clone(state);
       if (before.items.length) {
@@ -115,6 +124,21 @@
       message('Board imported. Pre-import recovery copy retained.', before);
     } catch (error) { message('Could not import: ' + error.message); }
   }
+  const pasteDialog = document.createElement('dialog');
+  pasteDialog.id = 'paste-backup-dialog';
+  pasteDialog.innerHTML = '<form method="dialog" class="paste-backup-form"><h2>Paste ONTO Backup</h2><p>Paste the complete JSON backup text. Your current board will be protected by the same pre-import recovery process.</p><label for="paste-backup-text">Backup JSON</label><textarea id="paste-backup-text" rows="9" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste the complete ONTO JSON backup here"></textarea><div class="edit-actions"><button type="button" id="paste-backup-cancel">Cancel</button><button type="button" id="paste-backup-apply" class="primary">Import pasted backup</button></div></form>';
+  document.body.appendChild(pasteDialog);
+  const pasteArea = pasteDialog.querySelector('#paste-backup-text');
+  pasteButton.addEventListener('click', () => pasteDialog.showModal());
+  pasteDialog.querySelector('#paste-backup-cancel').addEventListener('click', () => pasteDialog.close());
+  pasteDialog.querySelector('#paste-backup-apply').addEventListener('click', async () => {
+    const text = pasteArea.value.trim();
+    if (!text) { alert('Paste your ONTO backup JSON first.'); return; }
+    // Close before validation/confirmation so iOS never leaves a modal over the board.
+    pasteDialog.close();
+    await importBoardText(text);
+    pasteArea.value = '';
+  });
   restoreButton.addEventListener('click', () => {
     try {
       const raw = localStorage.getItem(RECOVERY_KEY);
