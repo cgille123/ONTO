@@ -40,21 +40,37 @@
     catch (_) { restoreButton.hidden = true; }
   }
   refreshRecovery();
-  // Export is a browser download, not a board mutation. Do not display the
-  // global Undo toast or leave the storage label in a transient saving state.
+  // On iOS, use the native Share sheet for a JSON file instead of opening
+  // Safari's download preview, which can strand the subsequent file picker.
+  // Desktop/unsupported browsers retain the existing download behavior.
   let exportLabelTimer;
-  $('#export').addEventListener('click', () => {
+  $('#export').addEventListener('click', async () => {
     try {
-      downloadBoard(state);
+      const filename = 'ONTO-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+      const backup = new File([JSON.stringify(state, null, 2)], filename, {type:'application/json'});
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isiOS && typeof navigator.share === 'function' &&
+          typeof navigator.canShare === 'function' && navigator.canShare({files:[backup]})) {
+        try {
+          await navigator.share({files:[backup]});
+        } catch (error) {
+          // A dismissed Share sheet is not a request to download instead.
+          if (error.name === 'AbortError') return;
+          throw error;
+        }
+      } else {
+        downloadBoard(state);
+      }
       if (storageLabel) {
         clearTimeout(exportLabelTimer);
-        storageLabel.textContent = 'Backup requested · Keep the JSON file somewhere safe';
+        storageLabel.textContent = 'Backup sent · Keep the JSON file somewhere safe';
         exportLabelTimer = setTimeout(() => {
           storageLabel.textContent = 'Saved on this device · Export for a backup';
         }, 3500);
       }
     } catch (error) {
-      if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
+      if (storageLabel) storageLabel.textContent = 'Export failed · ' + (error.message || 'Please try again');
     }
   });
   // Keep one native input. iOS can lose a file picker when its element is
