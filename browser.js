@@ -27,9 +27,9 @@
   const restoreButton = document.createElement('button');
   restoreButton.type = 'button';
   restoreButton.id = 'restore-before-import';
-  restoreButton.textContent = 'Restore pre-import backup';
+  restoreButton.textContent = 'Undo Import';
   restoreButton.hidden = true;
-  $('#import').after(restoreButton);
+  $('#recovery-tools').appendChild(restoreButton);
   function refreshRecovery() {
     try { restoreButton.hidden = !localStorage.getItem(RECOVERY_KEY); }
     catch (_) { restoreButton.hidden = true; }
@@ -39,7 +39,7 @@
   autoRestoreButton.type='button';
   autoRestoreButton.id='restore-auto-backup';
   autoRestoreButton.textContent='Restore earlier board';
-  restoreButton.after(autoRestoreButton);
+  $('#recovery-tools').appendChild(autoRestoreButton);
   function readAutoSnapshots(){
     const raw=localStorage.getItem('onto-auto-snapshots-v1');
     const entries=raw?JSON.parse(raw):[];
