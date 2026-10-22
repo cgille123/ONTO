@@ -410,3 +410,27 @@ body > main > .dock-buttons{pointer-events:auto!important}
 @media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
   #tray #attributes.size-picker{padding-left:36px!important}
 }
+
+/* Portrait: use the same fixed viewport anchoring as working landscape.
+   Do not change the containing block to an absolutely-positioned main. */
+@media (hover:none) and (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+  body > main > .dock-buttons{
+    position:fixed!important;
+    right:calc(14px + env(safe-area-inset-right))!important;
+    bottom:calc(6px + env(safe-area-inset-bottom))!important;
+  }
+  .site-header .brand{
+    position:fixed!important;
+    left:10px!important;
+    bottom:calc(8px + env(safe-area-inset-bottom))!important;
+  }
+  #bottom-dock,#bottom-dock.dock-collapsed{
+    position:fixed!important;
+    bottom:calc(4px + env(safe-area-inset-bottom))!important;
+  }
+}
+/* Three 36px grid pitches clear the left DELETE control in the hoverboard. */
+@media (pointer:coarse) and (max-width:600px){
+  #tray #attributes.size-picker{padding-left:108px!important}
+  #tray #attributes.size-picker::before{left:108px!important}
+}
