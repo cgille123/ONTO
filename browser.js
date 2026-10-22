@@ -47,10 +47,20 @@
     return entries.filter(entry=>Number.isFinite(entry.at)&&entry.board).slice(0,3);
   }
   function refreshAutoRestore(){
-    try{autoRestoreButton.hidden=readAutoSnapshots().length===0;}
-    catch(_){autoRestoreButton.hidden=true;}
+    // Always show recovery control so its existence and availability are clear.
+    try{
+      const count=readAutoSnapshots().length;
+      autoRestoreButton.textContent=count ? 'Restore earlier board ('+count+')' : 'Restore earlier board (none yet)';
+      autoRestoreButton.disabled=count===0;
+      autoRestoreButton.title=count ? 'Choose a saved board version' : 'Edit a tile to create the first recovery snapshot';
+    }catch(_){
+      autoRestoreButton.textContent='Restore earlier board (unavailable)';
+      autoRestoreButton.disabled=true;
+    }
   }
   refreshAutoRestore();
+  document.querySelector('.board-extras')?.addEventListener('toggle',refreshAutoRestore);
+  window.addEventListener('onto:snapshot-saved',refreshAutoRestore);
   autoRestoreButton.addEventListener('click',()=>{
     try{
       const entries=readAutoSnapshots();

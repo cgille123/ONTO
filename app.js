@@ -63,12 +63,14 @@ function snapshotPreviousBoard(){
     const previous=localStorage.getItem(KEY);
     if(!previous)return;
     const prior=validate(JSON.parse(previous));
+    if(JSON.stringify(prior)===JSON.stringify(state))return;
     const now=Date.now();
     const snapshots=JSON.parse(localStorage.getItem(AUTO_BACKUPS_KEY)||'[]');
     if(!Array.isArray(snapshots))return;
     if(snapshots.length && now-snapshots[0].at<15*60*1000)return;
     const next=[{at:now,board:prior},...snapshots].slice(0,3);
     localStorage.setItem(AUTO_BACKUPS_KEY,JSON.stringify(next));
+    window.dispatchEvent(new Event('onto:snapshot-saved'));
   }catch(e){/* Saving the current board takes priority if snapshot storage is full. */}
 }
 function persist(){normalize();try{snapshotPreviousBoard();localStorage.setItem(KEY,JSON.stringify(state));$('#storage').textContent='Saved on this device · Export for a backup';}catch(e){$('#storage').textContent='Saving unavailable · Export to keep your work';}}
