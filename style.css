@@ -434,3 +434,8 @@ body > main > .dock-buttons{pointer-events:auto!important}
   #tray #attributes.size-picker{padding-left:108px!important}
   #tray #attributes.size-picker::before{left:108px!important}
 }
+
+/* Native import picker: the real file input receives the user gesture. */
+#bottom-dock .tools .native-import{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden;cursor:pointer;min-height:30px;margin:0;padding:3px 8px;border:1px solid transparent;border-radius:12px;color:var(--text);background:transparent;font-size:11px;line-height:1.5;white-space:nowrap}
+#bottom-dock .tools .native-import:focus-within{outline:3px solid var(--green);outline-offset:2px}
+#bottom-dock .tools .native-import #file{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;margin:0;opacity:0;cursor:pointer;font-size:16px;border:0}

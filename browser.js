@@ -52,7 +52,8 @@
       if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
     }
   });
-  $('#import').addEventListener('click', () => $('#file').click());
+  // iOS: native user-initiated file input inside the visible Import label.
+  // Avoid programmatic input.click(), which may be blocked after a download sheet.
   $('#file').addEventListener('change', async event => {
     const file = event.target.files?.[0];
     event.target.value = '';
