@@ -388,3 +388,9 @@ body > main > .dock-buttons{pointer-events:auto!important}
  #board-canvas{overflow:visible}
  #grid{max-width:none!important;transform-origin:top left}
 }
+
+/* Standalone iOS: prevent WebKit's automatic focus magnification on inputs.
+   Preserve user pinch-zoom; do not lock viewport scale. */
+@media (hover:none) and (pointer:coarse) {
+  #thought, #bottom-dock #thought, .site-header #thought {font-size:16px!important}
+}
