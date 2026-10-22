@@ -362,8 +362,16 @@ body > main > .dock-buttons{pointer-events:auto!important}
  html,body{width:100%;max-width:100%;overflow-x:hidden}
  body,main{height:var(--onto-viewport-height,100dvh)}
  #board-scroll{width:var(--onto-viewport-width,100%);max-width:100%;left:0;right:0;transform:none;overflow-x:hidden}
- #board-canvas,#grid{max-width:100%}
+ #board-canvas{max-width:100%}
+ /* The flow grid is intentionally wider before scaling. Clamping it halves tile widths. */
+ #grid{max-width:none}
  body > main > .dock-buttons{right:calc(14px + env(safe-area-inset-right))!important;bottom:calc(14px + env(safe-area-inset-bottom))!important}
  #bottom-dock,#bottom-dock.dock-collapsed{right:calc(8px + env(safe-area-inset-right))!important;max-width:calc(100% - 16px)}
  #tray{max-width:calc(100% - 20px)}
 }
+
+/* Undo lives above the fixed ONTO brand; the action text is not a toast card. */
+#toast{position:fixed!important;left:18px!important;bottom:calc(59px + env(safe-area-inset-bottom))!important;transform:none!important;display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:10px;max-width:min(520px,calc(100vw - 36px));padding:0!important;background:transparent!important;color:var(--text)!important;border:0!important;border-radius:0!important;box-shadow:none!important;pointer-events:none}
+#toast #undo{pointer-events:auto;background:#b5fa61!important;color:#142008!important;border:1px solid #b5fa61!important;border-radius:12px!important;padding:8px 16px!important;min-height:38px!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0005}
+#toast span{font-size:12px;color:#d4e0ea;line-height:1.3;min-width:0;text-shadow:0 1px 4px #10151e}
+@media(max-width:540px){#toast{left:10px!important;bottom:calc(52px + env(safe-area-inset-bottom))!important;max-width:calc(100vw - 20px)}#toast #undo{padding:7px 12px!important;min-height:35px!important}}
