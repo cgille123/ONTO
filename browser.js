@@ -57,49 +57,14 @@
       if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
     }
   });
-  // iOS may cancel a file input after returning from the system download viewer.
-  // Treat the file input as disposable: create a fresh native input whenever
-  // the app resumes, and after a canceled/used picker. No synthetic click.
-  const importLabel = $('#import');
-  let fileInput = $('#file');
-  let pickerOpen = false;
-  let needsRearm = false;
-  function rearmImport() {
-    if (pickerOpen) { needsRearm = true; return; }
-    const replacement = document.createElement('input');
-    replacement.id = 'file';
-    replacement.type = 'file';
-    replacement.accept = 'application/json,.json';
-    replacement.setAttribute('aria-label', 'Import ONTO backup');
-    fileInput.replaceWith(replacement);
-    fileInput = replacement;
-    fileInput.addEventListener('change', onImportFile);
-    fileInput.addEventListener('cancel', onPickerCancel);
-    needsRearm = false;
-  }
-  function onPickerCancel() {
-    pickerOpen = false;
-    // Replace only after the native picker has finished dispatching events.
-    setTimeout(rearmImport, 0);
-  }
-  function onImportFile(event) {
-    pickerOpen = false;
+  // Keep one native input. iOS can lose a file picker when its element is
+  // replaced during a visibility transition, so never replace it on resume.
+  const fileInput = $('#file');
+  fileInput.addEventListener('change', event => {
     const file = event.currentTarget.files?.[0];
-    // Re-arm immediately for the next import; keep the selected File object.
-    setTimeout(rearmImport, 0);
     if (file) importBoardFile(file);
-  }
-  fileInput.addEventListener('change', onImportFile);
-  fileInput.addEventListener('cancel', onPickerCancel);
-  importLabel.addEventListener('pointerdown', () => {
-    // If iOS canceled a prior picker without emitting cancel, do not leave
-    // a stale state blocking the next native interaction.
-    pickerOpen = false;
-  }, {passive:true});
-  importLabel.addEventListener('click', e => { if (e.target?.id === 'file') pickerOpen = true; }, true);
-  window.addEventListener('pageshow', () => { pickerOpen = false; setTimeout(rearmImport, 0); });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') { pickerOpen = false; setTimeout(rearmImport, 250); }
+    // Permit selecting the same file again without replacing the element.
+    event.currentTarget.value = '';
   });
   async function importBoardFile(file) {
     if (file.size > MAX_IMPORT_BYTES) { message('Could not import: File exceeds 10 MB.'); return; }
