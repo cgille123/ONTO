@@ -448,7 +448,7 @@ body > main > .dock-buttons{pointer-events:auto!important}
 /* Paste Backup: compact, scrollable dialog for mobile and desktop. */
 #paste-backup-dialog{max-width:min(92vw,560px);max-height:85dvh;overflow:auto}#paste-backup-dialog .paste-backup-form{display:flex;flex-direction:column;gap:12px}#paste-backup-text{width:100%;min-height:170px;box-sizing:border-box;font:16px/1.4 ui-monospace,monospace;resize:vertical}#paste-backup-dialog .edit-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 
-/* A separate native file picker, rather than an invisible overlay on Import. */
-#bottom-dock .tools .native-import{display:none!important}
-#bottom-dock .tools .onto-file-picker{display:inline-block;max-width:155px;width:155px;min-height:30px;font-size:11px;padding:2px;color:var(--text);background:transparent;border:0}
-#bottom-dock .tools .onto-file-picker::file-selector-button{font:inherit;background:#202a38;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;cursor:pointer}
+/* The working native iOS file picker is directly over the Import label.
+   No scripted .click() and no secondary Choose File control. */
+#bottom-dock .tools .native-import{display:inline-flex!important;position:relative}
+#bottom-dock .tools .native-import .onto-file-picker{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;z-index:1}
