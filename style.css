@@ -142,3 +142,118 @@ main{max-width:none;padding:0 24px}
 #bottom-dock.dock-collapsed .dock-inner{display:none}
 #bottom-dock.dock-collapsed #dock-toggle{margin:0}
 #board-scroll{padding-bottom:calc(var(--dock-height) + 28px)}
+
+/* ONTO tile presentation: only tiles at least 2x2 grow their title. */
+#grid:not([data-layout="smash"]) .tile:not([data-w="1"]):not([data-h="1"]) .tile-title{font-size:24px}
+#grid:not([data-layout="smash"]) .tile[data-w="2"][data-h="3"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="2"][data-h="4"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="3"][data-h="2"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="3"][data-h="3"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="3"][data-h="4"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="4"][data-h="2"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="4"][data-h="3"] .tile-title,
+#grid:not([data-layout="smash"]) .tile[data-w="4"][data-h="4"] .tile-title{font-size:32px}
+#grid:not([data-layout="smash"]) .tile .lineage-tag{position:absolute;top:11px;right:12px;color:var(--green);font-size:11px;font-weight:800;letter-spacing:.6px;line-height:1}
+#grid:not([data-layout="smash"]) .tile:has(.lineage-tag) .tile-status{padding-right:43px}
+
+/* ONTO display groups and compact momentum */
+.display-section-label{width:100%;font-size:11px;letter-spacing:1.5px;font-weight:800;color:#b5fa61;margin:10px 0 1px;padding-top:7px;border-top:1px solid #ffffff20}
+.preset-create-row{display:flex;align-items:center;gap:9px;width:100%;font-size:11px;color:#9daebd;margin-top:7px}.preset-create-row button{border:1px solid #8caf6a88;border-radius:8px;background:#243d31;color:#b5fa61;padding:6px 10px;font-weight:700}
+#onto-momentum-switch{background:transparent;border:1px solid #a7ef7c77;color:#b5fa61;border-radius:9px;padding:7px 9px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer}
+#momentum-slot[hidden]{display:none!important}#momentum-slot{position:relative;z-index:4;max-height:32dvh;overflow:auto;border-bottom:1px solid #536675;background:#141e2a}#momentum-slot #momentum{margin:0;padding:8px 20px}#momentum-slot .momentum-top{margin-bottom:4px}
+.intensity-choices{display:flex;gap:5px;margin-top:9px}.intensity-choices button{padding:5px 9px;border-radius:7px;border:1px solid #74889a;color:#d5e3f1;background:#26384a;font-size:12px}.intensity-choices button.selected{background:#406b48;border-color:#b5fa61;color:white}
+.tile[data-intensity="hot"]:not([data-color="none"]){border:3px solid rgb(var(--tint));box-shadow:0 0 0 1px rgba(var(--tint),.25),0 4px 0 #070b1260}
+.tile[data-intensity="hotter"]:not([data-color="none"]){background:linear-gradient(145deg,rgba(var(--tint),.87),rgba(var(--tint),.6)),#1c2530;border-color:rgb(var(--tint));color:#08141d}.tile[data-intensity="hotter"] .tile-title,.tile[data-intensity="hotter"] .tile-step,.tile[data-intensity="hotter"] .tile-status,.tile[data-intensity="hotter"] .tile-bottom{color:#091925;text-shadow:0 1px #ffffff44}
+.tile[data-preset="true"]{border-style:dashed;border-color:#b5fa61a0}.tile[data-preset="true"] .tile-status{color:#b5fa61}.tile[data-preset="true"] .tile-bottom{display:none}
+#preset-dialog label,#preset-edit-dialog label{display:block;margin:12px 0}#preset-dialog input,#preset-edit-dialog input{display:block;width:100%;margin-top:6px}
+@media(max-width:540px){#onto-momentum-switch{font-size:10px;padding:5px}.preset-create-row{flex-wrap:wrap}}
+
+.preset-edit-control{position:absolute;right:8px;top:7px;padding:5px 7px;border:1px solid #a4d57e66;border-radius:7px;color:#b5fa61;background:#1d3028;z-index:1;cursor:pointer;font-size:15px}.tile[data-preset="true"]{position:relative}.tile[data-preset="true"] .tile-title{padding-right:22px}
+
+/* Compact DISPLAY: use width instead of stacking filters. */
+#bottom-dock .board-controls>.display-section-label:first-child{margin:0;padding:0;border:0}
+#bottom-dock .filter-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+#bottom-dock .filter-trio .panel-row.filter{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0}
+#bottom-dock .filter-trio .panel-label{flex:none;font-size:11px;text-align:center}
+#bottom-dock .filter-trio select{min-width:0;width:100%;max-width:none;padding:6px 3px;font-size:11px;text-overflow:ellipsis}
+#bottom-dock .display-section-label{margin:5px 0 0;padding-top:4px}
+#bottom-dock .board-controls{gap:5px}
+#bottom-dock .board-extras{margin-top:3px}
+.site-header .brand{position:relative;cursor:default}
+#brand-stage-count{display:block;position:absolute;top:100%;left:0;color:#9fbb9a;font-size:10px;font-weight:500;white-space:nowrap;letter-spacing:0}
+#board-scroll{top:calc(var(--header-height) + var(--momentum-offset,0px));transition:top .18s ease}
+#momentum-slot{max-height:none;overflow:visible}
+#editor-intensity{flex-basis:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:3px}
+#editor-intensity button{min-height:36px;height:36px;padding:5px 7px}
+#editor .editor-colors{display:flex;flex-wrap:wrap}
+#editor.editing-preset .editor-category,#editor.editing-preset .editor-when,#editor.editing-preset .editor-stage-actions,#editor.editing-preset .lineage,#editor.editing-preset label:has(#details){display:none!important}
+@media(max-width:600px){.site-header .brand{cursor:pointer}.site-header #onto-momentum-switch{display:none}#brand-stage-count{font-size:9px}}
+
+/* Compact color/intensity swatches, shared by editor and drag drawer. */
+#editor .editor-colors{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+#editor-color-chips{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+#editor-color-chips .intensity-divider,#attributes .intensity-divider{display:inline-block;width:8px;flex:none}
+#editor-color-chips .intensity-dot,#attributes.color-picker .intensity-dot{width:36px;height:36px;min-height:36px;display:grid;place-items:center;padding:5px;background:transparent;border:1px solid transparent;border-radius:10px}
+#editor-color-chips .intensity-dot[aria-pressed="true"],#attributes.color-picker .intensity-dot.applied{border-color:#c1cddd99;background:#ffffff0a}
+.intensity-swatch{display:block;width:26px;height:26px;border-radius:7px;background:linear-gradient(145deg,rgba(var(--tint,54,70,90),.28),rgba(var(--tint,54,70,90),.11)),#202a38;border:1px solid rgba(var(--tint,100,120,140),.5)}
+[data-level="hot"] .intensity-swatch{border:3px solid rgb(var(--tint,100,120,140))}
+[data-level="hotter"] .intensity-swatch{background:linear-gradient(145deg,rgba(var(--tint,54,70,90),.92),rgba(var(--tint,54,70,90),.65));border:1px solid rgb(var(--tint,100,120,140))}
+#editor-color-chips .intensity-dot[data-swatch="none"] .intensity-swatch,#attributes .intensity-dot[data-swatch="none"] .intensity-swatch{--tint:120,140,160}
+/* Same nine-cell size selector in the drawer and editor. */
+#attributes.size-picker{display:grid;grid-template-columns:repeat(3,36px);gap:5px;justify-content:start}
+#attributes.size-picker button{width:36px;height:36px;min-height:36px;padding:0;border:1px solid #56677d;border-radius:7px;background:#202a38;color:transparent;font-size:0}
+#attributes.size-picker button.filled{background:#42683b;border-color:#9edc62}
+#attributes.size-picker button.chosen{outline:2px solid #b5fa61;outline-offset:1px}
+#attributes.color-picker{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+#attributes.color-picker>button{width:36px;height:36px;min-height:36px;padding:5px;border-radius:10px;display:grid;place-items:center}
+#attributes.color-picker>button:not(.intensity-dot) .color-swatch{width:26px;height:26px;flex:none}
+#attributes.color-picker button.applied{color:inherit;background:#ffffff0b;border-color:#b5fa61}
+/* Header and Momentum alignment. */
+.site-header .brand{display:flex;align-items:center;gap:14px}
+#brand-stage-count{position:static;display:inline-block;font-size:13px;color:#a8c7a4;letter-spacing:0;white-space:nowrap}
+#momentum-slot{border-bottom:0;background:transparent}
+#momentum-slot #momentum{margin-bottom:12px}
+#momentum-slot + #board-scroll{border-top:0}
+
+/* Hoverboard: consistent island footprint across attribute modes; no instruction clutter. */
+#tray{width:min(740px,calc(100% - 24px));}
+#attributes{min-height:132px;align-content:start;align-items:start;}
+#attributes.size-picker,#attributes.color-picker{width:100%;margin:0;min-height:132px;align-content:start;}
+#attributes.size-picker{grid-template-columns:repeat(3,36px);grid-auto-rows:36px;gap:5px;justify-content:start;}
+#attributes.size-picker button{width:36px;height:36px;min-height:36px;padding:0;font-size:0;line-height:0;}
+#tray .tray-bottom{justify-content:flex-end;margin-top:6px;}
+#tray-confirmation{min-height:21px;}
+@media(max-width:540px){#attributes,#attributes.size-picker,#attributes.color-picker{min-height:132px;}#tray .tray-bottom{margin-top:6px;}}
+
+/* Compact hoverboard: grid determines height, never the other modes. */
+#tray{--tray-grid:108px}
+#tray .tray-top{margin-bottom:4px}
+#attributes,#attributes.size-picker,#attributes.color-picker{min-height:0!important;height:var(--tray-grid)!important;max-height:var(--tray-grid);align-content:end!important;align-items:end!important;overflow:auto}
+#attributes.size-picker{position:relative;grid-template-columns:repeat(3,32px);grid-auto-rows:32px;gap:4px;overflow:visible}
+#attributes.size-picker button{width:32px;height:32px;min-height:32px;position:relative;z-index:1;background:transparent!important;border:1px solid #718b856b!important;border-radius:3px;outline:0!important}
+#attributes.size-picker::before{content:"";position:absolute;left:0;bottom:0;width:calc(var(--selected-cols,2) * 32px + (var(--selected-cols,2) - 1) * 4px);height:calc(var(--selected-rows,2) * 32px + (var(--selected-rows,2) - 1) * 4px);background:#6da64a8c;border:2px solid #b5fa61;border-radius:5px;box-sizing:border-box;pointer-events:none}
+#attributes.size-picker button.chosen{box-shadow:inset 0 0 0 1px #d8f9b4}
+#tray-confirmation{display:none!important}
+#tray .tray-bottom{margin-top:3px!important}
+#momentum-slot #momentum{margin-bottom:21px}
+/* Hoverboard: reclaim the former Never Mind row; the size grid sets the height. */
+#tray{padding:10px 12px 9px;--tray-grid:104px}
+#tray .tray-top{margin-bottom:2px}
+#attributes,#attributes.size-picker,#attributes.color-picker{height:104px!important;max-height:104px;min-height:0!important;padding:0!important;align-content:start!important;align-items:start!important}
+#attributes.size-picker{grid-template-columns:repeat(3,32px);grid-auto-rows:32px;gap:4px;justify-content:start}
+#attributes.size-picker::before{top:0;bottom:auto;left:0;width:calc(var(--selected-cols,2) * 32px + (var(--selected-cols,2) - 1) * 4px);height:calc(var(--selected-rows,2) * 32px + (var(--selected-rows,2) - 1) * 4px)}
+#attributes.size-picker button.applied{background:transparent!important;color:inherit!important}
+#tray .tray-bottom{position:absolute;right:12px;bottom:9px;margin:0!important;z-index:2}
+#never-mind{min-height:32px;padding:5px 11px}
+
+/* ONTO refinement: expanded Momentum has breathing room and visually attaches to its toggle. */
+#momentum-slot:not([hidden]){margin-bottom:36px!important;}
+#momentum-slot:not([hidden]) #momentum{margin-bottom:0!important;border-top-color:#a7ef7c77;}
+.site-header:has(+ #momentum-slot:not([hidden])) #onto-momentum-switch{border-color:#a7ef7caa;border-bottom-left-radius:4px;border-bottom-right-radius:4px;background:#1a2938;box-shadow:0 3px 0 #1a2938;}
+/* A short outline bridge makes the open island read as an extension of the button. */
+.site-header:has(+ #momentum-slot:not([hidden])) #onto-momentum-switch{position:relative;}
+.site-header:has(+ #momentum-slot:not([hidden])) #onto-momentum-switch::after{content:"";position:absolute;left:14px;right:14px;top:100%;height:12px;border-left:1px solid #a7ef7c77;border-right:1px solid #a7ef7c77;background:linear-gradient(#1a2938,#1a293800);pointer-events:none;z-index:5;}
+@media(max-width:600px){.site-header #onto-momentum-switch::after{display:none!important;}}
+/* Two richer hues, compatible with Soft, Hot and Hotter. */
+.tile[data-color="deepblue"],[data-swatch="deepblue"]{--tint:22,59,136}
+.tile[data-color="deeppurple"],[data-swatch="deeppurple"]{--tint:81,33,140}
