@@ -249,22 +249,23 @@ measureDock();if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureD
 
 window.addEventListener?.('resize',measureGrid);
 
-// iOS installed-PWA viewport can change after a tile is inserted without a normal resize event.
+// The board is the only scrolling surface. Never use visualViewport.height to size
+// body/main: iOS can change that reading during tile insertion or UI animations.
+// Re-measure the grid only when the actual layout viewport changes.
 let ontoViewportFrame=0;
-function refreshIOSViewport(){
+let ontoLastLayoutWidth=0;
+function refreshIOSViewport(force=false){
   cancelAnimationFrame(ontoViewportFrame);
   ontoViewportFrame=requestAnimationFrame(()=>{
-    const vv=window.visualViewport;
-    const width=Math.round(vv?.width||document.documentElement.clientWidth||innerWidth);
-    const height=Math.round(vv?.height||innerHeight);
-    // Keep CSS board width tied to its actual containing block; visualViewport can report a scaled width.
-    document.documentElement.style.setProperty('--onto-viewport-width',width+'px');
-    document.documentElement.style.setProperty('--onto-viewport-height',height+'px');
-    measureGrid();measureDock();
+    const width=document.documentElement.clientWidth;
+    if(force || width!==ontoLastLayoutWidth){
+      ontoLastLayoutWidth=width;
+      measureGrid();
+      measureDock();
+    }
   });
 }
-window.visualViewport?.addEventListener('resize',refreshIOSViewport);
-window.visualViewport?.addEventListener('scroll',refreshIOSViewport);
-window.addEventListener('orientationchange',refreshIOSViewport);
-window.addEventListener('pageshow',refreshIOSViewport);
-refreshIOSViewport();
+window.addEventListener('resize',()=>refreshIOSViewport(true));
+window.addEventListener('orientationchange',()=>refreshIOSViewport(true));
+window.addEventListener('pageshow',()=>refreshIOSViewport(true));
+refreshIOSViewport(true);
