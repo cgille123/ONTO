@@ -35,9 +35,22 @@
     catch (_) { restoreButton.hidden = true; }
   }
   refreshRecovery();
+  // Export is a browser download, not a board mutation. Do not display the
+  // global Undo toast or leave the storage label in a transient saving state.
+  let exportLabelTimer;
   $('#export').addEventListener('click', () => {
-    downloadBoard(state);
-    message('Backup downloaded. Keep this JSON file somewhere safe.');
+    try {
+      downloadBoard(state);
+      if (storageLabel) {
+        clearTimeout(exportLabelTimer);
+        storageLabel.textContent = 'Backup requested · Keep the JSON file somewhere safe';
+        exportLabelTimer = setTimeout(() => {
+          storageLabel.textContent = 'Saved on this device · Export for a backup';
+        }, 3500);
+      }
+    } catch (error) {
+      if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
+    }
   });
   $('#import').addEventListener('click', () => $('#file').click());
   $('#file').addEventListener('change', async event => {
