@@ -32,6 +32,19 @@ try{const raw=localStorage.getItem(KEY);if(raw)state=validate(JSON.parse(raw));}
 let editorSize={width:2,height:2},editorColor='none',editorIntensity='soft';
 let bulkSelection=new Set(),bulkAction='',bulkTargets=[];
 let layout='tiles',fixedZoom=.75,flowZoom=.75,fitBoard=false;try{const saved=localStorage.getItem('onto-layout');if(['fixed','smash'].includes(saved))layout=saved;const zoom=Number(localStorage.getItem('onto-fixed-zoom'));if(zoom>=.08&&zoom<=2)fixedZoom=zoom;const flow=Number(localStorage.getItem('onto-flow-zoom'));if(flow>=.4&&flow<=2)flowZoom=flow;}catch(e){}
+// The iPhone flow board uses a smaller initial scale. Preserve deliberate zoom choices.
+if(window.matchMedia('(pointer:coarse) and (max-width:600px)').matches){
+  try{
+    if(localStorage.getItem('onto-phone-flow-default-v1')!== 'set'){
+      const prior=localStorage.getItem('onto-flow-zoom');
+      if(prior===null || Number(prior)===.75){
+        flowZoom=.5;
+        localStorage.setItem('onto-flow-zoom','0.5');
+      }
+      localStorage.setItem('onto-phone-flow-default-v1','set');
+    }
+  }catch(e){}
+}
 let nowLayout=layout;
 let view='now',categoryFilter='',statusFilter='',selected=null,transitionMode='onto',undoState=null,toastTimer,drag=null,trayMode='status';
 function validateClosures(value){if(value===undefined)return [];if(!Array.isArray(value)||value.length>10000||value.some(c=>!c||!['','accomplished','changed','stopped','fizzled'].includes(c.kind)||typeof c.outcome!=='string'||c.outcome.length>1000||!(c.completed===null||typeof c.completed==='string'&&Number.isFinite(Date.parse(c.completed)))||typeof c.reopened!=='string'||!Number.isFinite(Date.parse(c.reopened))))throw Error('Invalid previous stage outcomes.');return value.map(c=>({...c}));}
@@ -93,7 +106,14 @@ function measureGrid(){
   $('#fixed-preview').hidden=!fixed||!drag?.fixedCandidate;
   if(stack){grid.style.width='100%';grid.style.transform='';canvas.style.width='';canvas.style.height='';$('#zoom-reset').textContent='—';return;}
   if(fixed)grid.style.width='960px';
-  else {grid.style.width='100%';const available=grid.clientWidth;if(!available)return;grid.style.width=available/flowZoom+'px';}
+  else {
+    // Derive the logical board width from the scrollport, never from the
+    // previously scaled grid or the expanding contents of the canvas.
+    const boardStyle=getComputedStyle(board);
+    const available=board.clientWidth-(parseFloat(boardStyle.paddingLeft)||0)-(parseFloat(boardStyle.paddingRight)||0);
+    if(available<=0)return;
+    grid.style.width=(available/flowZoom)+'px';
+  }
   const width=fixed?960:parseFloat(grid.style.width);
   if(!width)return;
   const columns=fixed?MATRIX_COLUMNS:flowColumns(width);
