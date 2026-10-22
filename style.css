@@ -458,3 +458,44 @@ body > main > .dock-buttons{pointer-events:auto!important}
 #bottom-dock .board-extras .tools > button,#bottom-dock .board-extras .tools > label{width:100%;min-width:0;justify-content:center;text-align:center;white-space:nowrap;padding:5px 3px;font-size:11px;min-height:32px}
 #bottom-dock .board-extras .recovery-tools{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 #bottom-dock .board-extras .recovery-tools button{font-size:11px;padding:4px 8px;min-height:30px}
+
+/* Board options: compact, clearly separated action buttons on narrow phones. */
+#bottom-dock .board-extras > footer{
+  display:flex;flex-direction:column;align-items:stretch;gap:8px;
+  width:100%;margin-top:8px;
+}
+#bottom-dock .board-extras .tools{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;width:100%;flex:none;
+}
+#bottom-dock .board-extras .tools > button,
+#bottom-dock .board-extras .tools > .native-import{
+  display:flex!important;align-items:center;justify-content:center;
+  width:100%;min-width:0;min-height:38px;margin:0;
+  padding:7px 3px;border:1px solid #53637b;border-radius:9px;
+  background:#263348;color:#eef2fa;font-size:12px;font-weight:600;
+  line-height:1.15;white-space:nowrap;
+}
+#bottom-dock .board-extras .tools > .native-import{
+  position:relative;overflow:hidden;cursor:pointer;
+}
+#bottom-dock .board-extras .tools > .native-import .onto-file-picker{
+  position:absolute;inset:0;width:100%;height:100%;opacity:0;z-index:1;
+  cursor:pointer;font-size:16px;
+}
+#bottom-dock .board-extras .recovery-tools{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;width:100%;margin:0;
+}
+#bottom-dock .board-extras .recovery-tools:empty{display:none}
+#bottom-dock .board-extras .recovery-tools button{
+  width:100%;min-width:0;min-height:36px;margin:0;
+  padding:7px 5px;border:1px solid #46556a;border-radius:9px;
+  background:#1d2939;color:#d6e0ed;font-size:11px;
+  line-height:1.2;white-space:normal;
+}
+#bottom-dock .board-extras .recovery-tools button[hidden]{display:none!important}
+#bottom-dock .board-extras #storage{
+  display:block;order:initial;width:100%;margin:0;
+  font-size:11px;line-height:1.35;color:#a7b8ce;
+}
