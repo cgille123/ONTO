@@ -9,7 +9,7 @@
     dockToggle.setAttribute('aria-expanded', String(expanded));
     dockToggle.setAttribute('aria-label', expanded ? 'Collapse view controls' : 'Expand view controls');
   });
-  const momentumSwitch=$('#onto-momentum-switch');const momentumSlot=$('#momentum-slot');const toggleMomentum=()=>{momentumSlot.hidden=!momentumSlot.hidden;momentumSwitch.setAttribute('aria-expanded',String(!momentumSlot.hidden));requestAnimationFrame(()=>{document.documentElement.style.setProperty('--momentum-offset',momentumSlot.hidden?'0px':(momentumSlot.getBoundingClientRect().height+28)+'px');});};momentumSwitch.addEventListener('click',toggleMomentum);const brand=document.querySelector('.site-header .brand');brand.addEventListener('click',()=>{if(matchMedia('(max-width:600px)').matches)toggleMomentum();});
+  const momentumSwitch=$('#onto-momentum-switch');const momentumSlot=$('#momentum-slot');const toggleMomentum=()=>{momentumSlot.hidden=!momentumSlot.hidden;momentumSwitch.setAttribute('aria-expanded',String(!momentumSlot.hidden));requestAnimationFrame(()=>{document.documentElement.style.setProperty('--momentum-offset',momentumSlot.hidden?'0px':(momentumSlot.getBoundingClientRect().height+28)+'px');});};momentumSwitch.addEventListener('click',toggleMomentum);
   const storageLabel = $('#storage');
   if (storageLabel) storageLabel.textContent = 'Saved on this device · Export for a backup';
   $('#export').addEventListener('click', () => {

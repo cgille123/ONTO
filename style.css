@@ -257,3 +257,86 @@ main{max-width:none;padding:0 24px}
 /* Two richer hues, compatible with Soft, Hot and Hotter. */
 .tile[data-color="deepblue"],[data-swatch="deepblue"]{--tint:22,59,136}
 .tile[data-color="deeppurple"],[data-swatch="deeppurple"]{--tint:81,33,140}
+
+/* Compact shared footer controls: no extra popup height */
+#bottom-dock .dock-buttons{display:flex;gap:5px;align-items:stretch;justify-content:flex-end;margin-top:4px}
+#bottom-dock .dock-buttons button{flex:1;min-width:0;min-height:31px;font-size:11px;letter-spacing:.4px;padding:5px 7px}
+#bottom-dock #onto-momentum-switch{display:block!important;border:1px solid #a7ef7c77;border-radius:9px}
+.site-header #onto-momentum-switch{display:none!important}
+.drag-crosshair{position:fixed;z-index:100000;pointer-events:none;transform:translate(-50%,-50%);width:30px;height:30px;border:2px solid #b5fa61;border-radius:50%;background:#102131cf;color:#b5fa61;text-align:center;line-height:24px;font-size:26px;font-weight:300;box-shadow:0 0 0 3px #091420aa}
+@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+ #tray{width:min(340px,calc(100vw - 20px));max-height:min(72dvh,560px);overflow:visible;padding:10px 12px 12px}
+ #tray .tray-top{display:block}
+ #tray .tray-top strong{display:none}
+ #tray .segments{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;width:100%}
+ #tray .segments button{min-width:0;padding:8px 1px;font-size:10px;white-space:nowrap}
+ #tray #attributes:not(.size-picker):not(.color-picker){display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px;height:auto!important;max-height:42dvh;overflow-y:auto}
+ #tray #attributes:not(.size-picker):not(.color-picker) button{flex:none;width:100%;min-height:37px;text-align:left;padding:7px 12px}
+ #tray #attributes.size-picker,#tray #attributes.color-picker{height:108px!important;max-height:108px}
+ #tray .tray-bottom{right:12px;bottom:10px}
+}
+
+/* Dock anchored at one location; expanded panel grows left and up. */
+#bottom-dock,#bottom-dock.dock-collapsed{left:auto;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));transform:none;width:min(370px,calc(100vw - 32px));padding:9px 12px 8px;border-radius:15px}
+#bottom-dock.dock-collapsed{width:102px;padding:6px}
+#bottom-dock .dock-buttons{margin-top:3px;justify-content:flex-end}
+#bottom-dock #dock-toggle,#bottom-dock.dock-collapsed #dock-toggle{width:90px;min-width:90px;flex:0 0 90px;margin:0;min-height:34px;padding:5px 8px}
+#bottom-dock #onto-momentum-switch{display:block!important;flex:0 0 90px;min-height:34px;background:#33475d;border:1px solid #7188a3;border-radius:10px;color:#f7fbff;font-size:11px;font-weight:750;letter-spacing:.35px}
+#bottom-dock.dock-collapsed #onto-momentum-switch{display:none!important}
+/* ONTO mark and stage count stay at the bottom left of the viewport. */
+.site-header .brand{position:fixed!important;left:18px;bottom:calc(18px + env(safe-area-inset-bottom));top:auto;z-index:35;display:flex;align-items:center;gap:10px;margin:0;font-size:25px;line-height:1;cursor:default}
+#brand-stage-count{position:static!important;display:inline-block!important;font-size:12px}
+.site-header #capture{margin-left:0}
+@media(max-width:540px){#bottom-dock,#bottom-dock.dock-collapsed{right:8px;bottom:calc(8px + env(safe-area-inset-bottom))}.site-header .brand{left:10px;bottom:calc(16px + env(safe-area-inset-bottom));font-size:20px}#brand-stage-count{font-size:10px}}
+/* Group Therapy is visible as soon as one item is selected. */
+#bottom-dock:has(#group-strip:not([hidden])){width:min(410px,calc(100vw - 32px))}
+#bottom-dock.dock-collapsed:has(#group-strip:not([hidden])) .dock-inner{display:block}
+#bottom-dock.dock-collapsed:has(#group-strip:not([hidden])) .board-controls,#bottom-dock.dock-collapsed:has(#group-strip:not([hidden])) .board-extras{display:none}
+
+/* Group Therapy uses the existing hoverboard, never the DISPLAY dock. */
+#group-strip{display:none!important}
+#tray .tray-bottom{display:flex;align-items:center;justify-content:space-between;left:12px;right:12px;width:auto;pointer-events:none}
+#tray .tray-bottom button{pointer-events:auto}
+#tray #tray-delete{color:#e6a0ae;border-color:#e6a0ae70;background:#291d2a;font-size:11px;min-height:30px;padding:5px 9px}
+#tray #tray-delete[hidden]{display:none!important}
+#tray #tray-delete.hover{background:#72364a;color:white}
+#tray .tray-top #tray-title{font-size:12px;letter-spacing:.5px}
+@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){#tray .tray-top #tray-title{display:block;margin-bottom:6px}}
+/* Closed DISPLAY is a button, not an island; keep its right edge anchored. */
+#bottom-dock.dock-collapsed{background:transparent!important;border-color:transparent!important;box-shadow:none!important;padding:6px!important}
+#bottom-dock,#bottom-dock.dock-collapsed{right:16px!important}
+@media(max-width:540px){#bottom-dock,#bottom-dock.dock-collapsed{right:8px!important}}
+
+/* October refinements: same compact hoverboard for single and group operations. */
+#tray.group-therapy #tray-title{font-size:19px!important;font-weight:900;letter-spacing:1.1px;color:var(--green);line-height:1.15;text-shadow:0 0 14px #b5fa6138}
+#tray:not(.group-therapy) #tray-title{font-size:12px}
+#tray #tray-delete{display:inline-flex;align-items:center;justify-content:center}
+#tray #tray-delete[hidden]{display:none!important}
+/* Keep DISPLAY's button anchored to the viewport, not the expanding dock. */
+#bottom-dock #dock-toggle,#bottom-dock.dock-collapsed #dock-toggle{position:fixed!important;right:calc(16px + 6px);bottom:calc(12px + env(safe-area-inset-bottom) + 6px);margin:0!important;z-index:33}
+#bottom-dock:not(.dock-collapsed){padding-bottom:calc(51px + env(safe-area-inset-bottom))!important}
+#bottom-dock.dock-collapsed{padding:0!important;width:90px!important;border:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#bottom-dock.dock-collapsed:before{display:none!important}
+@media(max-width:540px){#bottom-dock #dock-toggle,#bottom-dock.dock-collapsed #dock-toggle{right:calc(8px + 6px);bottom:calc(8px + env(safe-area-inset-bottom) + 6px)}}
+/* Never split words into vertical individual letters on narrow tiles. */
+#grid:not([data-layout="smash"]) .tile .tile-status,#grid:not([data-layout="smash"]) .tile .tile-title,#grid:not([data-layout="smash"]) .tile .tile-step{word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;min-width:0}
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-status{font-size:clamp(9px,1.05vw,12px)!important;letter-spacing:0!important;line-height:1.2}
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-title{font-size:clamp(12px,1.3vw,15px)!important;line-height:1.22}
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-step{font-size:clamp(11px,1.2vw,13px)!important}
+#grid:not([data-layout="smash"]) .tile .tile-title,#grid:not([data-layout="smash"]) .tile .tile-step{overflow:hidden;text-overflow:ellipsis}
+
+/* Fixed, independent dock action row: no transformed/backdrop parent. */
+body > main > .dock-buttons{position:fixed!important;right:22px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:1300;display:flex!important;align-items:center;gap:7px;width:auto!important;margin:0!important;padding:0!important;transform:none!important;background:none!important;border:0!important;box-shadow:none!important;}
+body > main > .dock-buttons button{height:38px;min-height:38px;min-width:90px;padding:6px 10px;margin:0!important;flex:none!important;border:1px solid #7188a3;border-radius:10px;background:#33475d;color:#f7fbff;font-size:12px;font-weight:750;letter-spacing:.3px;position:static!important;}
+body > main > .dock-buttons #onto-momentum-switch{display:none!important}
+body:has(#bottom-dock:not(.dock-collapsed)) > main > .dock-buttons #onto-momentum-switch{display:block!important}
+#bottom-dock,#bottom-dock.dock-collapsed{bottom:calc(12px + env(safe-area-inset-bottom))!important;right:16px!important;transform:none!important;}
+#bottom-dock:not(.dock-collapsed){padding-bottom:65px!important}
+#bottom-dock.dock-collapsed{width:0!important;height:0!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;pointer-events:none!important}
+#bottom-dock.dock-collapsed .dock-inner{display:none!important}
+body > main > .dock-buttons{pointer-events:auto!important}
+/* Status labels always stay on one line, scaled for narrow tile footprints. */
+#grid .tile .tile-status{white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;hyphens:none!important;display:block!important;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:0!important;font-size:clamp(9px,1.1vw,13px)!important;line-height:1.2!important}
+#grid .tile[data-w="1"] .tile-status{font-size:clamp(8px,.9vw,11px)!important}
+#grid .tile .status-dot{display:none!important}
+@media(max-width:540px){body > main > .dock-buttons{right:14px;bottom:calc(14px + env(safe-area-inset-bottom))}body > main > .dock-buttons button{min-width:78px;font-size:11px}}
