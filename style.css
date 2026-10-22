@@ -356,3 +356,14 @@ body > main > .dock-buttons{pointer-events:auto!important}
  #tray .tray-bottom{position:static!important;flex:0 0 33px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;margin-top:5px!important;padding:0!important}
  #tray #tray-confirmation{flex:0 0 auto!important;max-height:18px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;font-size:9px!important}
 }
+
+/* Installed iOS PWA: size fixed surfaces from the visible viewport, not stale 100vw/dvh. */
+@media (pointer:coarse) and (max-width:600px){
+ html,body{width:100%;max-width:100%;overflow-x:hidden}
+ body,main{height:var(--onto-viewport-height,100dvh)}
+ #board-scroll{width:var(--onto-viewport-width,100%);max-width:100%;left:0;right:0;transform:none;overflow-x:hidden}
+ #board-canvas,#grid{max-width:100%}
+ body > main > .dock-buttons{right:calc(14px + env(safe-area-inset-right))!important;bottom:calc(14px + env(safe-area-inset-bottom))!important}
+ #bottom-dock,#bottom-dock.dock-collapsed{right:calc(8px + env(safe-area-inset-right))!important;max-width:calc(100% - 16px)}
+ #tray{max-width:calc(100% - 20px)}
+}

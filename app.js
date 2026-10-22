@@ -182,7 +182,7 @@ function updateTrayConfirmation(){if(!drag?.active)return;const i=get(drag.id);$
 function enterDrawer(hit){const inside=!!hit?.closest('#tray');if(inside&&layout==='fixed')clearFixedPreview();if(inside&&!drag.inDrawer){drag.inDrawer=true;state.order=drag.before.order.slice();renderGrid();}else if(!inside)drag.inDrawer=false;return inside;}
 function applyAttribute(button){if(!drag?.active)return;const batch=layout==='smash'&&bulkSelection.has(drag.id)?[...bulkSelection].filter(id=>id!==drag.id):[];if(trayMode==='status'&&(get(drag.id).closed||!statusOptions().includes(button.dataset.attribute)))return;if(trayMode==='color'&&state.colorMode!=='user')return;const i=get(drag.id),value=button.dataset.attribute;if(i.preset)return;if(trayMode==='color'&&value.startsWith('intensity:')){const level=value.slice(10);if(!['soft','hot','hotter'].includes(level))return;if((i.intensity||'soft')!==level){i.intensity=level;drag.changed=true;drag.ghost.dataset.intensity=level;for(const id of batch){const other=get(id);if(other&&!other.preset)other.intensity=level;}}updateTrayConfirmation();return;}if(trayMode==='when'){if(value==='__pickdate__'){drag.pendingDate=true;updateTrayConfirmation();return;}const fields=['__today__','__tomorrow__'].includes(value)?{when:'__date__',date:dateAfter(value==='__tomorrow__'?1:0)}:{when:value,date:''};if(!validWhenFields(fields))return;drag.pendingDate=false;if(i.when!==fields.when||i.date!==fields.date){Object.assign(i,fields);drag.changed=true;}}else if(trayMode==='size'){const [width,height]=value.split(':').map(Number);if(![1,2,4].includes(width)||![1,2,4].includes(height))return;if(layout==='fixed'&&i.fixed&&!canPlaceFixed(i,i.fixed,{width,height})){$('#tray-confirmation').textContent='This size needs more empty space at the tile’s original position.';return;}if(sizeKey(i)!==value){i.size={width,height};drag.changed=true;$('#attributes').style.setProperty('--selected-cols',String([1,2,4].indexOf(width)+1));$('#attributes').style.setProperty('--selected-rows',String([1,2,4].indexOf(height)+1));}syncGhostSize(i);}else if(trayMode==='color'&&!tileColors.includes(value)){return;}else if(i[trayMode]!==value){i[trayMode]=value;drag.changed=true;}button.classList.remove('hover');if(!i.closed){drag.ghost.querySelector('.tile-status').textContent=i.status;drag.ghost.dataset.status=i.status;}drag.ghost.querySelector('.category-tag').textContent=i.category||'Unsorted';drag.ghost.dataset.color=effectiveColor(i);const when=drag.ghost.querySelector('.tile-when');if(when)when.textContent=whenLabel(i);if(batch.length){for(const id of batch){const other=get(id);if(!other||other.preset||other.closed&&trayMode==='status')continue;if(trayMode==='when'){other.when=i.when;other.date=i.date;}else if(trayMode==='size'){other.size={...i.size};}else if(trayMode==='color'){other.color=i.color;other.intensity=i.intensity;}else other[trayMode]=i[trayMode];}drag.changed=true;}updateTrayConfirmation();}
 function syncGhostSize(i){if(layout==='smash')return;if(!drag?.ghost?.style||!$('#grid').clientWidth)return;const sz=sizeOf(i),unit=parseFloat($('#grid').style.getPropertyValue('--cell-size'));if(!unit)return;const scale=boardScale(),width=(unit*sz.width+12*(sz.width-1))*scale,height=(unit*sz.height+12*(sz.height-1))*scale;drag.ghost.style.width=width+'px';drag.ghost.style.height=height+'px';drag.ghost.dataset.w=sz.width;drag.ghost.dataset.h=sz.height;drag.offsetX=Math.min(drag.offsetX,width);drag.offsetY=Math.min(drag.offsetY,height);positionGhost();}
-function dragTarget(){return drag?{x:Math.max(16,Math.min(innerWidth-16,drag.x)),y:Math.min(innerHeight-16,drag.y+Math.max(100,drag.ghost?.getBoundingClientRect().height||0)+24)}:{x:0,y:0};}
+function dragTarget(){if(!drag)return {x:0,y:0};const r=drag.ghost?.getBoundingClientRect();const viewport=window.visualViewport;const maxX=(viewport?.width||innerWidth)-12,maxY=(viewport?.height||innerHeight)-12;return {x:Math.max(12,Math.min(maxX,drag.x)),y:Math.max(12,Math.min(maxY,(r?.bottom??drag.y)+8))};}
 function boardTarget(){return drag?{x:drag.x,y:drag.y}:{x:0,y:0};}
 function dragHit(){const cross=dragTarget(),hover=document.elementFromPoint(cross.x,cross.y);if(hover?.closest('#tray'))return {point:cross,hit:hover};const point=boardTarget();return {point,hit:document.elementFromPoint(point.x,point.y)};}
 function groupDrag(){return !!(drag&&layout==='smash'&&bulkSelection.has(drag.id)&&bulkSelection.size);}
@@ -248,3 +248,22 @@ function measureDock(){const dock=$('#bottom-dock');if(!dock.getBoundingClientRe
 measureDock();if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureDock).observe($('#bottom-dock'));
 
 window.addEventListener?.('resize',measureGrid);
+
+// iOS installed-PWA viewport can change after a tile is inserted without a normal resize event.
+let ontoViewportFrame=0;
+function refreshIOSViewport(){
+  cancelAnimationFrame(ontoViewportFrame);
+  ontoViewportFrame=requestAnimationFrame(()=>{
+    const vv=window.visualViewport;
+    const width=Math.round(vv?.width||document.documentElement.clientWidth||innerWidth);
+    const height=Math.round(vv?.height||innerHeight);
+    document.documentElement.style.setProperty('--onto-viewport-width',width+'px');
+    document.documentElement.style.setProperty('--onto-viewport-height',height+'px');
+    measureGrid();measureDock();
+  });
+}
+window.visualViewport?.addEventListener('resize',refreshIOSViewport);
+window.visualViewport?.addEventListener('scroll',refreshIOSViewport);
+window.addEventListener('orientationchange',refreshIOSViewport);
+window.addEventListener('pageshow',refreshIOSViewport);
+refreshIOSViewport();
