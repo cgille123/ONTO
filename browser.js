@@ -52,63 +52,69 @@
       if (storageLabel) storageLabel.textContent = 'Export failed · Please try again';
     }
   });
-  // Temporary iOS diagnostic: observe the native download -> import interaction.
-  // Capture-phase listeners do not alter normal event handling.
-  const traceBox = document.createElement('div');
-  traceBox.id = 'onto-import-trace';
-  traceBox.setAttribute('aria-live', 'polite');
-  traceBox.innerHTML = '<strong>IMPORT TRACE</strong> <button type="button" id="onto-trace-close">×</button><pre id="onto-trace-lines"></pre>';
-  document.body.appendChild(traceBox);
-  const traceLines = traceBox.querySelector('pre');
-  let traces = [];
-  const trace = label => { traces.push(label); traces = traces.slice(-12); traceLines.textContent = traces.join('\n'); };
-  traceBox.querySelector('button').addEventListener('click', () => traceBox.remove());
-  const targetName = el => el?.id || el?.closest?.('#import')?.id || el?.tagName || '?';
-  for (const type of ['pointerdown','touchstart','click']) {
-    document.addEventListener(type, event => {
-      if (event.target.closest?.('#onto-import-trace')) return;
-      if (event.target.closest?.('#import,#export,#file,#restore-before-import')) trace(type + ': ' + targetName(event.target));
-    }, true);
+  // iOS may cancel a file input after returning from the system download viewer.
+  // Treat the file input as disposable: create a fresh native input whenever
+  // the app resumes, and after a canceled/used picker. No synthetic click.
+  const importLabel = $('#import');
+  let fileInput = $('#file');
+  let pickerOpen = false;
+  let needsRearm = false;
+  function rearmImport() {
+    if (pickerOpen) { needsRearm = true; return; }
+    const replacement = document.createElement('input');
+    replacement.id = 'file';
+    replacement.type = 'file';
+    replacement.accept = 'application/json,.json';
+    replacement.setAttribute('aria-label', 'Import ONTO backup');
+    fileInput.replaceWith(replacement);
+    fileInput = replacement;
+    fileInput.addEventListener('change', onImportFile);
+    fileInput.addEventListener('cancel', onPickerCancel);
+    needsRearm = false;
   }
-  $('#file').addEventListener('click', () => trace('file input click'), true);
-  $('#file').addEventListener('change', e => trace('file change: ' + (e.target.files?.length || 0)), true);
-  $('#file').addEventListener('cancel', () => trace('file picker cancel'), true);
-  document.addEventListener('visibilitychange', () => trace('visibility: ' + document.visibilityState));
-  window.addEventListener('pageshow', () => trace('pageshow'));
-  window.addEventListener('focus', () => trace('window focus'));
-  window.addEventListener('blur', () => trace('window blur'));
-  trace('ready; import=' + !!$('#import') + '; file=' + !!$('#file'));
-  // iOS: native user-initiated file input inside the visible Import label.
-  // Avoid programmatic input.click(), which may be blocked after a download sheet.
-  $('#file').addEventListener('change', async event => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
+  function onPickerCancel() {
+    pickerOpen = false;
+    // Replace only after the native picker has finished dispatching events.
+    setTimeout(rearmImport, 0);
+  }
+  function onImportFile(event) {
+    pickerOpen = false;
+    const file = event.currentTarget.files?.[0];
+    // Re-arm immediately for the next import; keep the selected File object.
+    setTimeout(rearmImport, 0);
+    if (file) importBoardFile(file);
+  }
+  fileInput.addEventListener('change', onImportFile);
+  fileInput.addEventListener('cancel', onPickerCancel);
+  importLabel.addEventListener('pointerdown', () => {
+    // If iOS canceled a prior picker without emitting cancel, do not leave
+    // a stale state blocking the next native interaction.
+    pickerOpen = false;
+  }, {passive:true});
+  importLabel.addEventListener('click', e => { if (e.target?.id === 'file') pickerOpen = true; }, true);
+  window.addEventListener('pageshow', () => { pickerOpen = false; setTimeout(rearmImport, 0); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { pickerOpen = false; setTimeout(rearmImport, 250); }
+  });
+  async function importBoardFile(file) {
     try {
       if (file.size > MAX_IMPORT_BYTES) throw Error('File exceeds 10 MB.');
       const incoming = validate(JSON.parse(await file.text()));
       if (state.items.length && !confirm('Import replaces this device’s current board. Save an exported backup first. Continue?')) return;
       const before = clone(state);
-      // Do not overwrite an existing board unless a recovery copy is safely written.
       if (before.items.length) {
-        try {
-          localStorage.setItem(RECOVERY_KEY, JSON.stringify(before));
-        } catch (_) {
-          throw Error('Cannot save a recovery copy (storage may be full). Export your board before importing.');
-        }
+        try { localStorage.setItem(RECOVERY_KEY, JSON.stringify(before)); }
+        catch (_) { throw Error('Cannot save a recovery copy (storage may be full). Export your board before importing.'); }
       }
-      // Commit the imported board to storage BEFORE updating in-memory state/UI.
-      // If storage fails, the existing board stays in place.
       try { localStorage.setItem(KEY, JSON.stringify(incoming)); }
       catch (_) { throw Error('Import could not be saved. Existing board was preserved.'); }
       state = incoming;
       returnToNow();
       categoryFilter = ''; statusFilter = ''; whenFilter = '';
-      render();
-      refreshRecovery();
+      render(); refreshRecovery();
       message('Board imported. Pre-import recovery copy retained.', before);
     } catch (error) { message('Could not import: ' + error.message); }
-  });
+  }
   restoreButton.addEventListener('click', () => {
     try {
       const raw = localStorage.getItem(RECOVERY_KEY);
