@@ -434,22 +434,3 @@ body > main > .dock-buttons{pointer-events:auto!important}
   #tray #attributes.size-picker{padding-left:108px!important}
   #tray #attributes.size-picker::before{left:108px!important}
 }
-
-/* iPhone Home Screen portrait dock: compensate for the screen area excluded
-   from the standalone WebKit layout viewport (measured on device).
-   These overrides affect only the dock controls, not tile or board zoom. */
-@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
-  @media (display-mode:standalone){
-    body > main > .dock-buttons{bottom:calc(6px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
-    .site-header .brand{bottom:calc(8px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
-    #bottom-dock,#bottom-dock.dock-collapsed{bottom:calc(4px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
-    #toast{bottom:calc(52px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
-  }
-}
-
-@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
- html.onto-standalone body > main > .dock-buttons{bottom:calc(6px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
- html.onto-standalone .site-header .brand{bottom:calc(8px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
- html.onto-standalone #bottom-dock,html.onto-standalone #bottom-dock.dock-collapsed{bottom:calc(4px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
- html.onto-standalone #toast{bottom:calc(52px + env(safe-area-inset-bottom) - var(--onto-standalone-bottom-extension,0px))!important}
-}

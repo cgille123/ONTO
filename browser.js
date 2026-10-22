@@ -38,23 +38,3 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
   }
 })();
-
-
-
-/* Standalone portrait iPhone: the CSS viewport can end above the actual
-   screen. The measured 874px screen / 812px viewport difference is 62px.
-   Extend only the bottom dock anchors into that unoccupied screen area.
-   Browser tabs and landscape keep their existing, working layout. */
-(()=>{
- const standalone=()=>navigator.standalone===true || matchMedia('(display-mode: standalone)').matches;
- function updateStandaloneDock(){
-   const portrait=matchMedia('(orientation: portrait) and (max-width: 600px) and (pointer: coarse)').matches;
-   const difference=standalone() && portrait ? Math.max(0,Math.min(120,screen.height-window.innerHeight)) : 0;
-   document.documentElement.classList.toggle('onto-standalone',standalone());
-   document.documentElement.style.setProperty('--onto-standalone-bottom-extension',difference+'px');
- }
- addEventListener('resize',updateStandaloneDock);
- addEventListener('orientationchange',updateStandaloneDock);
- addEventListener('pageshow',updateStandaloneDock);
- updateStandaloneDock();
-})();
