@@ -2,6 +2,12 @@
 (() => {
   const $ = s => document.querySelector(s);
   // UI-only state: intentionally not persisted; always starts collapsed.
+  const settings = $('#onto-settings');
+  const openSettings = $('#onto-settings-open');
+  const closeSettings = $('#onto-settings-close');
+  openSettings?.addEventListener('click', () => { if (!settings.open) settings.showModal(); });
+  closeSettings?.addEventListener('click', () => settings.close());
+  settings?.addEventListener('click', e => { if (e.target === settings) settings.close(); });
   const dock = $('#bottom-dock');
   const dockToggle = $('#dock-toggle');
   dockToggle.addEventListener('click', () => {
@@ -27,6 +33,40 @@
     } catch (_) { backupStatus.textContent = 'Backup status unavailable · Export regularly'; }
   }
   refreshBackupStatus();
+  // Storage persistence is best-effort. It never replaces a separate export.
+  const protectButton = document.querySelector('#protect-storage');
+  const protectStatus = document.querySelector('#storage-protection-status');
+  async function refreshStorageProtection() {
+    if (!protectStatus) return;
+    try {
+      if (!navigator.storage || typeof navigator.storage.persisted !== 'function') {
+        protectStatus.textContent = 'Persistent storage unavailable in this browser · Export regularly';
+        return;
+      }
+      const granted = await navigator.storage.persisted();
+      let usage = '';
+      if (typeof navigator.storage.estimate === 'function') {
+        const estimate = await navigator.storage.estimate();
+        if (Number.isFinite(estimate.usage)) usage = ' · Browser storage: ' + (estimate.usage / 1048576).toFixed(1) + ' MB';
+      }
+      protectStatus.textContent = (granted ? 'Persistent storage enabled' : 'Standard browser storage (may be cleared)') + usage;
+    } catch (_) { protectStatus.textContent = 'Storage status unavailable · Export regularly'; }
+  }
+  protectButton?.addEventListener('click', async () => {
+    if (!navigator.storage || typeof navigator.storage.persist !== 'function') {
+      message('This browser cannot request persistent storage. Export regularly for safety.');
+      return;
+    }
+    protectButton.disabled = true;
+    try {
+      const granted = await navigator.storage.persist();
+      message(granted ? 'Persistent browser storage enabled. Continue exporting off-device backups.' : 'Browser did not grant persistent storage. Your board is unchanged; export regularly.');
+    } catch (_) { message('Storage protection request unavailable. Your board is unchanged.'); }
+    finally { protectButton.disabled = false; await refreshStorageProtection(); }
+  });
+  refreshStorageProtection();
+  document.querySelector('.board-extras')?.addEventListener('toggle', () => { refreshStorageProtection(); });
+
   document.querySelector('.board-extras')?.addEventListener('toggle', refreshBackupStatus);
   document.querySelector('#check-board')?.addEventListener('click', () => {
     try {
@@ -84,48 +124,91 @@
   refreshAutoRestore();
   document.querySelector('.board-extras')?.addEventListener('toggle',refreshAutoRestore);
   window.addEventListener('onto:snapshot-saved',refreshAutoRestore);
-  autoRestoreButton.addEventListener('click',()=>{
+  // A checkpoint is a manually chosen recovery point, separate from rolling snapshots.
+  const MANUAL_KEY='onto-manual-checkpoint-v1';
+  const checkpointButton=document.createElement('button');
+  checkpointButton.type='button';checkpointButton.id='save-checkpoint';
+  checkpointButton.textContent='Save checkpoint';
+  $('#recovery-tools').appendChild(checkpointButton);
+  const recoveryDialog=document.createElement('dialog');
+  recoveryDialog.id='recovery-manager';
+  recoveryDialog.innerHTML='<div class="recovery-manager-inner"><div class="dialog-top"><h2>Board recovery</h2><button type="button" id="close-recovery-manager" aria-label="Close">×</button></div><p>Choose a saved version. Automatic snapshots are kept on this device; export a backup for protection outside ONTO.</p><div id="recovery-versions"></div><button type="button" id="recovery-done">Done</button></div>';
+  document.body.appendChild(recoveryDialog);
+  const versions=$('#recovery-versions');
+  const closeRecovery=()=>recoveryDialog.close();
+  $('#close-recovery-manager').addEventListener('click',closeRecovery);
+  $('#recovery-done').addEventListener('click',closeRecovery);
+  recoveryDialog.addEventListener('click',e=>{if(e.target===recoveryDialog)closeRecovery();});
+  function recoveryVersions(){
+    const out=[];
+    const raw=localStorage.getItem(MANUAL_KEY);
+    if(raw){try{const entry=JSON.parse(raw);out.push({name:'Manual checkpoint',at:entry.at,board:validate(entry.board)});}catch(_){out.push({name:'Manual checkpoint',error:true});}}
+    readAutoSnapshots().forEach((entry,index)=>{
+      try{out.push({name:'Automatic snapshot '+(index+1),at:entry.at,board:validate(entry.board)});}
+      catch(_){out.push({name:'Automatic snapshot '+(index+1),error:true});}
+    });
+    return out;
+  }
+  function showRecoveryVersions(){
+    versions.replaceChildren();
+    const entries=recoveryVersions();
+    if(!entries.length){const empty=document.createElement('p');empty.textContent='No recovery versions yet. Use Save checkpoint to create one.';versions.appendChild(empty);}
+    for(const entry of entries){
+      const row=document.createElement('div');row.className='recovery-version';
+      const info=document.createElement('div');
+      const name=document.createElement('strong');name.textContent=entry.name;
+      const detail=document.createElement('small');detail.textContent=entry.error?'Damaged or unavailable':new Date(entry.at).toLocaleString()+' · '+entry.board.items.length+' tiles';
+      info.append(name,detail);row.appendChild(info);
+      if(!entry.error){
+        const restore=document.createElement('button');restore.type='button';restore.textContent='Restore';
+        restore.addEventListener('click',()=>{
+          if(!confirm('Restore '+entry.name+'? Your current board will be saved as Undo Import first.'))return;
+          try{
+            const before=clone(state);
+            localStorage.setItem(RECOVERY_KEY,JSON.stringify(before));
+            localStorage.setItem(KEY,JSON.stringify(entry.board));
+            state=clone(entry.board);returnToNow();categoryFilter='';statusFilter='';whenFilter='';
+            render();refreshRecovery();refreshAutoRestore();closeRecovery();
+            message('Board restored. Use Undo Import to return to your previous board.',before);
+          }catch(error){message('Could not restore: '+error.message);}
+        });
+        const exportCopy=document.createElement('button');exportCopy.type='button';exportCopy.textContent='Export';
+        exportCopy.addEventListener('click',async()=>{
+          try{await shareBoardFile(entry.board,'ONTO-recovery');message('Recovery backup offered. Save the JSON outside ONTO.');}
+          catch(error){if(error.name!=='AbortError')message('Recovery export failed: '+error.message);}
+        });
+        const actions=document.createElement('div');actions.className='recovery-actions';actions.append(restore,exportCopy);row.appendChild(actions);
+      }
+      versions.appendChild(row);
+    }
+  }
+  autoRestoreButton.addEventListener('click',()=>{try{showRecoveryVersions();recoveryDialog.showModal();}catch(error){message('Recovery history unavailable: '+error.message);}});
+  checkpointButton.addEventListener('click',()=>{
     try{
-      const entries=readAutoSnapshots();
-      if(!entries.length){refreshAutoRestore();return;}
-      const choices=entries.map((entry,index)=>(index+1)+'. '+new Date(entry.at).toLocaleString()).join('\n');
-      const selection=prompt('Restore an earlier local board snapshot. Enter its number:\n'+choices);
-      if(selection===null)return;
-      if(!/^[1-3]$/.test(selection.trim())||Number(selection)>entries.length){message('Choose a listed snapshot number.');return;}
-      const recovered=validate(entries[Number(selection)-1].board);
-      if(!confirm('Replace your current board with this snapshot? Export your current board first if you need to keep it.'))return;
-      const before=clone(state);
-      // Preserve a separate undo point before replacing the active board.
-      localStorage.setItem(RECOVERY_KEY,JSON.stringify(before));
-      localStorage.setItem(KEY,JSON.stringify(recovered));
-      state=recovered;
-      returnToNow();categoryFilter='';statusFilter='';whenFilter='';
-      render();refreshRecovery();refreshAutoRestore();
-      message('Earlier board restored. Previous board kept as pre-import recovery.',before);
-    }catch(error){message('Could not restore snapshot: '+error.message);}
+      const board=validate(clone(state));
+      const existing=localStorage.getItem(MANUAL_KEY);
+      if(existing&&!confirm('Replace your previous manual checkpoint with the current board?'))return;
+      localStorage.setItem(MANUAL_KEY,JSON.stringify({at:Date.now(),board}));
+      message('Checkpoint saved on this device. Export for an independent backup.');
+    }catch(error){message('Could not save checkpoint: '+error.message);}
   });
   // On iOS, use the native Share sheet for a JSON file instead of opening
   // Safari's download preview, which can strand the subsequent file picker.
   // Desktop/unsupported browsers retain the existing download behavior.
+  async function shareBoardFile(board,prefix='ONTO-backup') {
+    const filename=prefix+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+    const backup=new File([JSON.stringify(board,null,2)],filename,{type:'application/json'});
+    const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+      (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if(isiOS&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'&&navigator.canShare({files:[backup]})){
+      await navigator.share({files:[backup]});
+    }else{downloadBoard(board,prefix);}
+  }
   let exportLabelTimer;
   $('#export').addEventListener('click', async () => {
     try {
-      const filename = 'ONTO-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
-      const backup = new File([JSON.stringify(state, null, 2)], filename, {type:'application/json'});
-      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      if (isiOS && typeof navigator.share === 'function' &&
-          typeof navigator.canShare === 'function' && navigator.canShare({files:[backup]})) {
-        try {
-          await navigator.share({files:[backup]});
-        } catch (error) {
-          // A dismissed Share sheet is not a request to download instead.
-          if (error.name === 'AbortError') return;
-          throw error;
-        }
-      } else {
-        downloadBoard(state);
-      }
+      try { await shareBoardFile(state); }
+      catch(error){if(error.name==='AbortError')return;throw error;}
       // This records that a backup was offered/shared, not that it was saved to Files.
       try { localStorage.setItem(LAST_EXPORT_KEY, String(Date.now())); } catch (_) {}
       refreshBackupStatus();

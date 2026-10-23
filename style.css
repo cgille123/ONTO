@@ -532,9 +532,66 @@ body > main > .dock-buttons{pointer-events:auto!important}
 @media(max-width:540px){.onto-plan-cards{grid-template-columns:1fr}.onto-plan-cards section{padding:10px}.onto-plan-cards p{margin:3px 0}}
 
 /* Size drag feedback: original footprint stays outlined, adopted footprint fills. */
-#attributes.size-picker::after{content:"";position:absolute;top:0;left:0;width:calc(var(--original-cols,2) * 32px + (var(--original-cols,2) - 1) * 4px);height:calc(var(--original-rows,2) * 32px + (var(--original-rows,2) - 1) * 4px);border:2px dashed #fff;box-sizing:border-box;border-radius:5px;pointer-events:none;z-index:3}
+#attributes.size-picker::after{content:"";position:absolute;top:0;left:36px;width:calc(var(--original-cols,2) * 32px + (var(--original-cols,2) - 1) * 4px);height:calc(var(--original-rows,2) * 32px + (var(--original-rows,2) - 1) * 4px);border:2px dashed #fff;box-sizing:border-box;border-radius:5px;pointer-events:none;z-index:3}
 #attributes.size-picker::before{z-index:0}
 #attributes.size-picker button.hover{box-shadow:inset 0 0 0 2px #fff8!important}
 
 /* Data-safety controls */
 .backup-health{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:10px}.backup-health small{font-size:12px;opacity:.8;flex:1 1 180px}.backup-health button{white-space:nowrap}
+
+/* Keep original-size outline anchored to the exact same grid origin as the selected fill. */
+#tray #attributes.size-picker::after{top:0!important;left:36px!important}
+@media(min-width:601px){#tray #attributes.size-picker::after{left:108px!important}}
+
+/* Recovery versions: clear choices, no text prompts. */
+#recovery-manager{width:min(92vw,560px);max-height:82dvh;overflow:auto;border-radius:14px;padding:0}
+#recovery-manager .recovery-manager-inner{padding:18px}
+#recovery-manager .dialog-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#recovery-manager h2{margin:0;font-size:1.2rem}
+#recovery-manager p{font-size:.9rem;line-height:1.4}
+.recovery-version{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #8885}
+.recovery-version strong,.recovery-version small{display:block}
+.recovery-version small{font-size:.75rem;opacity:.8;margin-top:4px}
+.recovery-actions{display:flex;gap:7px;flex-shrink:0}
+.recovery-actions button{padding:7px 10px}
+#recovery-done{width:100%;padding:10px;margin-top:12px}
+@media(max-width:450px){.recovery-version{align-items:flex-start;flex-direction:column}.recovery-actions{width:100%}.recovery-actions button{flex:1}}
+
+/* ONTO settings: remove administrative controls from DISPLAY. */
+.site-header button.brand{appearance:none;border:0;background:transparent;color:inherit;font:inherit;padding:0;text-align:left;cursor:pointer}
+.site-header button.brand:focus-visible{outline:2px solid #b5fa61;outline-offset:5px;border-radius:5px}
+#onto-settings{width:min(94vw,560px);max-height:86dvh;overflow:auto;background:#192532;color:#e7eef6;border:1px solid #708493;border-radius:15px;padding:18px;box-shadow:0 20px 80px #000a}
+#onto-settings::backdrop{background:#050b13b8}
+#onto-settings .onto-settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#onto-settings h2{font-size:19px;margin:0}
+#onto-settings-close{border:1px solid #74889a;background:#27394a;color:#fff;border-radius:8px;padding:6px 12px;font-size:22px;cursor:pointer}
+#onto-settings .board-extras>summary{display:none}
+#onto-settings .board-extras>footer{display:block;padding:0;margin:0;border:0;background:transparent}
+#onto-settings .onto-settings-label{margin:17px 0 7px;color:#b5fa61;font-size:11px;letter-spacing:1.3px;font-weight:800;border-top:1px solid #ffffff25;padding-top:10px}
+#onto-settings .tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#onto-settings .tools>button,#onto-settings .tools>.native-import{display:flex;position:relative;align-items:center;justify-content:center;min-width:0;min-height:38px;padding:7px 4px;border:1px solid #778b9d;border-radius:9px;background:#27394a;color:#fff;font-size:12px;cursor:pointer;overflow:hidden}
+#onto-settings .onto-file-picker{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:80px}
+#onto-settings .recovery-tools{display:flex;flex-wrap:wrap;gap:7px}
+#onto-settings .recovery-tools button,#onto-settings .backup-health button,#onto-settings #about-onto{border:1px solid #778b9d;border-radius:8px;background:#27394a;color:#fff;padding:8px 10px;cursor:pointer}
+#onto-settings .recovery-tools button[hidden]{display:none!important}
+#onto-settings .onto-plan{margin-top:0;padding-top:0;border:0}
+#onto-settings .backup-health{margin-top:0}
+#onto-settings #storage{display:block;margin-top:12px;font-size:11px;color:#a7b8ce}
+/* Single grid origin for BOTH adopted fill and original dashed outline.
+   Padding offsets the CSS grid tracks; absolute pseudo-elements use the same padding edge. */
+#tray #attributes.size-picker{--size-grid-origin:36px}
+@media (pointer:coarse) and (max-width:600px){#tray #attributes.size-picker{--size-grid-origin:108px}}
+#tray #attributes.size-picker::before,#tray #attributes.size-picker::after{left:var(--size-grid-origin)!important;top:0!important}
+
+/* Size selector regression correction: grid cells AND both overlays share the
+   same origin on mouse, touch, and pen. Three 36px pitches clear DELETE. */
+#tray #attributes.size-picker{
+  --size-grid-origin:108px!important;
+  padding-left:var(--size-grid-origin)!important;
+  box-sizing:border-box!important;
+}
+#tray #attributes.size-picker::before,
+#tray #attributes.size-picker::after{
+  left:var(--size-grid-origin)!important;
+  top:0!important;
+}
