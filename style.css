@@ -506,3 +506,35 @@ body > main > .dock-buttons{pointer-events:auto!important}
 .onto-plan-preview{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .onto-plan-preview input{width:15px;height:15px;margin:0}
 .onto-plan small{flex-basis:100%;font-size:11px;opacity:.75;line-height:1.35}
+
+/* Size tray: original size is outlined, newly adopted size is filled.
+   Both shapes remain visible until the drag is released. */
+#tray #attributes.size-picker::after{content:"";position:absolute;z-index:2;top:0;left:36px!important;width:calc(var(--original-cols,2) * 32px + (var(--original-cols,2) - 1) * 4px);height:calc(var(--original-rows,2) * 32px + (var(--original-rows,2) - 1) * 4px);border:2px dashed #f1f5fb;box-sizing:border-box;border-radius:5px;pointer-events:none;background:transparent}
+#tray #attributes.size-picker::before{z-index:0;background:#6da64aa8;border:2px solid #b5fa61}
+@media(min-width:601px){#tray #attributes.size-picker::after{left:108px!important}}
+
+/* ONTO release-readiness: compact plan and installation guide */
+.onto-plan-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+.onto-plan-header button{font:inherit;font-size:.82rem;padding:6px 10px;white-space:nowrap;border:1px solid currentColor;border-radius:8px;cursor:pointer}
+#onto-guide{width:min(92vw,610px);max-height:85dvh;overflow:auto;padding:0;border-radius:14px}
+#onto-guide .onto-guide-inner{padding:20px}
+#onto-guide .dialog-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#onto-guide h2{font-size:1.25rem;margin:0}
+#onto-guide h3{margin:18px 0 5px;font-size:1rem}
+#onto-guide p{line-height:1.45;margin:9px 0}
+.onto-plan-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:14px}
+.onto-plan-cards section{border:1px solid #7778;border-radius:10px;padding:12px;min-width:0}
+.onto-plan-cards strong,.onto-plan-cards b{display:block}
+.onto-plan-cards b{margin:6px 0}
+.onto-plan-cards p{font-size:.82rem}
+.onto-guide-note{font-size:.8rem;opacity:.8}
+#guide-done{width:100%;margin-top:12px;padding:11px}
+@media(max-width:540px){.onto-plan-cards{grid-template-columns:1fr}.onto-plan-cards section{padding:10px}.onto-plan-cards p{margin:3px 0}}
+
+/* Size drag feedback: original footprint stays outlined, adopted footprint fills. */
+#attributes.size-picker::after{content:"";position:absolute;top:0;left:0;width:calc(var(--original-cols,2) * 32px + (var(--original-cols,2) - 1) * 4px);height:calc(var(--original-rows,2) * 32px + (var(--original-rows,2) - 1) * 4px);border:2px dashed #fff;box-sizing:border-box;border-radius:5px;pointer-events:none;z-index:3}
+#attributes.size-picker::before{z-index:0}
+#attributes.size-picker button.hover{box-shadow:inset 0 0 0 2px #fff8!important}
+
+/* Data-safety controls */
+.backup-health{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:10px}.backup-health small{font-size:12px;opacity:.8;flex:1 1 180px}.backup-health button{white-space:nowrap}

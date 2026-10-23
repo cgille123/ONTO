@@ -15,6 +15,29 @@
   // One export/import handler, with a validated recovery snapshot before replacement.
   const RECOVERY_KEY = 'onto-recovery-before-import-v1';
   const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+  const LAST_EXPORT_KEY = 'onto-last-export-offered-v1';
+  const backupStatus = document.querySelector('#backup-status');
+  function refreshBackupStatus() {
+    if (!backupStatus) return;
+    try {
+      const stamp = Number(localStorage.getItem(LAST_EXPORT_KEY));
+      backupStatus.textContent = stamp && Number.isFinite(stamp)
+        ? 'Last backup offered: ' + new Date(stamp).toLocaleString() + ' · Verify it was saved outside ONTO'
+        : 'No recorded export on this device · Export a backup';
+    } catch (_) { backupStatus.textContent = 'Backup status unavailable · Export regularly'; }
+  }
+  refreshBackupStatus();
+  document.querySelector('.board-extras')?.addEventListener('toggle', refreshBackupStatus);
+  document.querySelector('#check-board')?.addEventListener('click', () => {
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (!stored) throw Error('No saved board found.');
+      const checked = validate(JSON.parse(stored));
+      const snapshots = readAutoSnapshots();
+      const good = snapshots.filter(x => { try { validate(x.board); return true; } catch (_) { return false; } }).length;
+      message('Board check OK: ' + checked.items.length + ' tiles, ' + good + '/' + snapshots.length + ' valid local snapshots. Export for off-device safety.');
+    } catch (error) { message('Board check: ' + error.message); }
+  });
   function downloadBoard(board, prefix = 'ONTO-backup') {
     const blob = new Blob([JSON.stringify(board, null, 2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -103,6 +126,9 @@
       } else {
         downloadBoard(state);
       }
+      // This records that a backup was offered/shared, not that it was saved to Files.
+      try { localStorage.setItem(LAST_EXPORT_KEY, String(Date.now())); } catch (_) {}
+      refreshBackupStatus();
       if (storageLabel) {
         clearTimeout(exportLabelTimer);
         storageLabel.textContent = 'Backup sent · Keep the JSON file somewhere safe';
@@ -131,7 +157,10 @@
     try {
       if (new Blob([text]).size > MAX_IMPORT_BYTES) throw Error('Backup exceeds 10 MB.');
       const incoming = validate(JSON.parse(text));
-      if (state.items.length && !confirm('Import replaces this device’s current board. Save an exported backup first. Continue?')) return;
+      const incomingCount = incoming.items.length;
+      const currentCount = state.items.length;
+      const preview = 'Import preview\n\nBackup: ' + incomingCount + ' tiles\nCurrent board: ' + currentCount + ' tiles\n\nImport replaces the current board. ONTO will keep an Undo Import copy when possible. Export first for an off-device backup.\n\nContinue?';
+      if (!confirm(preview)) return;
       const before = clone(state);
       if (before.items.length) {
         try { localStorage.setItem(RECOVERY_KEY, JSON.stringify(before)); }
