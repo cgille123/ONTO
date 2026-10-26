@@ -33,50 +33,41 @@
     } catch (_) { backupStatus.textContent = 'Backup status unavailable · Export regularly'; }
   }
   refreshBackupStatus();
-  // Storage persistence is best-effort. It never replaces a separate export.
-  const protectButton = document.querySelector('#protect-storage');
-  const protectStatus = document.querySelector('#storage-protection-status');
-  async function refreshStorageProtection() {
-    if (!protectStatus) return;
+  // Best-effort storage persistence; some browsers only allow this request
+  // during user interaction. Never block normal operation if unsupported.
+  async function protectStorageQuietly() {
     try {
-      if (!navigator.storage || typeof navigator.storage.persisted !== 'function') {
-        protectStatus.textContent = 'Persistent storage unavailable in this browser · Export regularly';
-        return;
-      }
-      const granted = await navigator.storage.persisted();
-      let usage = '';
-      if (typeof navigator.storage.estimate === 'function') {
-        const estimate = await navigator.storage.estimate();
-        if (Number.isFinite(estimate.usage)) usage = ' · Browser storage: ' + (estimate.usage / 1048576).toFixed(1) + ' MB';
-      }
-      protectStatus.textContent = (granted ? 'Persistent storage enabled' : 'Standard browser storage (may be cleared)') + usage;
-    } catch (_) { protectStatus.textContent = 'Storage status unavailable · Export regularly'; }
+      if (navigator.storage?.persist && navigator.storage?.persisted &&
+          !(await navigator.storage.persisted())) await navigator.storage.persist();
+    } catch (_) { /* browser refused or requires user activation */ }
   }
-  protectButton?.addEventListener('click', async () => {
-    if (!navigator.storage || typeof navigator.storage.persist !== 'function') {
-      message('This browser cannot request persistent storage. Export regularly for safety.');
-      return;
+  protectStorageQuietly();
+  // Read-only background validation. Never alter or replace the saved board.
+  function checkBoardQuietly() {
+    try {
+      const raw=localStorage.getItem(KEY);
+      if (raw) validate(JSON.parse(raw));
+      const snapshots=readAutoSnapshots();
+      for(const snapshot of snapshots) validate(snapshot.board);
+    } catch (error) {
+      console.warn('ONTO local data validation:', error.message);
     }
-    protectButton.disabled = true;
-    try {
-      const granted = await navigator.storage.persist();
-      message(granted ? 'Persistent browser storage enabled. Continue exporting off-device backups.' : 'Browser did not grant persistent storage. Your board is unchanged; export regularly.');
-    } catch (_) { message('Storage protection request unavailable. Your board is unchanged.'); }
-    finally { protectButton.disabled = false; await refreshStorageProtection(); }
-  });
-  refreshStorageProtection();
-  document.querySelector('.board-extras')?.addEventListener('toggle', () => { refreshStorageProtection(); });
-
-  document.querySelector('.board-extras')?.addEventListener('toggle', refreshBackupStatus);
-  document.querySelector('#check-board')?.addEventListener('click', () => {
-    try {
-      const stored = localStorage.getItem(KEY);
-      if (!stored) throw Error('No saved board found.');
-      const checked = validate(JSON.parse(stored));
-      const snapshots = readAutoSnapshots();
-      const good = snapshots.filter(x => { try { validate(x.board); return true; } catch (_) { return false; } }).length;
-      message('Board check OK: ' + checked.items.length + ' tiles, ' + good + '/' + snapshots.length + ' valid local snapshots. Export for off-device safety.');
-    } catch (error) { message('Board check: ' + error.message); }
+  }
+  window.addEventListener('load',checkBoardQuietly,{once:true});
+  const welcome=$('#onto-welcome');
+  const WELCOME_KEY='onto-welcome-seen-v1';
+  function closeWelcome(){welcome.close();try{localStorage.setItem(WELCOME_KEY,'1');}catch(_){}}
+  $('#welcome-start')?.addEventListener('click',closeWelcome);
+  $('#welcome-examples')?.addEventListener('click',()=>{closeWelcome();$('#examples')?.click();});
+  // Never show onboarding on an existing board or after dismissal.
+  window.addEventListener('load',()=>{
+    try { if(!localStorage.getItem(WELCOME_KEY) && state.items.length===0 && !loadError) welcome.showModal(); }
+    catch(_){}
+  },{once:true});
+  $('#onto-install-help')?.addEventListener('click',()=>{
+    const guide=$('#onto-guide');
+    if(guide && !guide.open) guide.showModal();
+    guide?.querySelector('h3:last-of-type')?.scrollIntoView({block:'nearest'});
   });
   function downloadBoard(board, prefix = 'ONTO-backup') {
     const blob = new Blob([JSON.stringify(board, null, 2)], {type:'application/json'});
