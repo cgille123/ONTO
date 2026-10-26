@@ -727,3 +727,106 @@ body > main > .dock-buttons{pointer-events:auto!important}
 #editor-status-buttons .editor-status-choice{min-width:0!important;min-height:31px!important;padding:4px 3px!important;font-size:11px!important}
 #editor-status-buttons [data-editor-status="__preset__"]{margin-left:10px!important;position:relative!important}
 #editor-status-buttons [data-editor-status="__preset__"]:before{content:"";position:absolute;left:-8px;top:4px;bottom:4px;border-left:1px solid #647484}
+
+/* 2026-10-26: entry, tile legibility, and inline undo feedback. */
+.site-header .onto-footer-left #toast{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex:0 1 auto;min-width:0;max-width:clamp(90px,24vw,300px)!important;min-height:0!important;padding:0!important;margin:0!important;overflow:hidden!important;background:none!important;border:0!important;box-shadow:none!important;white-space:nowrap!important;z-index:auto!important}
+.site-header .onto-footer-left #toast[hidden]{display:none!important}
+.site-header .onto-footer-left #toast span{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#c8f6a0}
+#grid .tile .tile-bottom,#grid .tile .category-tag,#grid .tile .tile-when{font-size:clamp(11px,1.15vw,14px)!important;line-height:1.25}
+#grid .tile .lineage-tag{font-size:clamp(12px,1.2vw,15px)!important}
+#grid .tile .tile-title{font-size:clamp(19px,2.15vw,30px);line-height:1.22}
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-title{font-size:clamp(15px,1.5vw,19px)!important}
+#grid .tile[data-h="1"] .tile-title{font-size:clamp(15px,1.5vw,19px)!important}
+@media(max-width:600px){
+ .site-header #capture{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;align-items:center!important}
+ .site-header #capture .capture-input-wrap{grid-column:1/-1;min-width:0;width:100%}
+ .site-header #capture #capture-add,.site-header #capture #capture-edit,.site-header #capture #capture-done{grid-row:2;min-width:0!important;width:100%!important;min-height:36px!important;margin:0!important;padding:7px 3px!important;font-size:clamp(10px,2.8vw,12px)!important;white-space:nowrap}
+ .site-header #capture #capture-add{grid-column:1}.site-header #capture #capture-edit{grid-column:2}.site-header #capture #capture-done{grid-column:3}
+ .site-header .onto-footer-left{gap:6px!important;max-width:calc(100vw - 115px)}
+ .site-header .onto-footer-left #toast{max-width:clamp(60px,19vw,115px)!important}
+ .site-header .onto-footer-left #toast span{font-size:10px}
+ #grid .tile .tile-bottom,#grid .tile .category-tag,#grid .tile .tile-when{font-size:11px!important}
+ #grid .tile .lineage-tag{font-size:12px!important}
+}
+
+/* Typography repair: supersede earlier !important narrow-tile rules.
+   Keep text legible without allowing tiny tiles to overflow. */
+#grid .tile .tile-title{font-size:clamp(23px,2.5vw,35px)!important;line-height:1.2!important;font-weight:700!important}
+#grid .tile .tile-status{font-size:clamp(12px,1.25vw,16px)!important;line-height:1.25!important;font-weight:750!important}
+#grid .tile .tile-bottom,#grid .tile .category-tag,#grid .tile .tile-when{font-size:clamp(13px,1.4vw,17px)!important;line-height:1.3!important}
+#grid .tile .lineage-tag{font-size:clamp(13px,1.4vw,17px)!important}
+#grid .tile .tile-step{font-size:clamp(14px,1.5vw,18px)!important;line-height:1.25!important}
+/* One-cell footprints need a compact but readable scale. */
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-title,#grid .tile[data-h="1"] .tile-title{font-size:clamp(17px,1.7vw,21px)!important}
+#grid .tile[data-w="1"] .tile-status{font-size:clamp(11px,1.05vw,13px)!important}
+#grid .tile[data-w="1"] .tile-bottom,#grid .tile[data-h="1"] .tile-bottom,#grid .tile[data-w="1"] .category-tag,#grid .tile[data-h="1"] .category-tag,#grid .tile[data-w="1"] .tile-when,#grid .tile[data-h="1"] .tile-when{font-size:12px!important}
+@media(max-width:600px){
+ #grid .tile .tile-title{font-size:clamp(22px,5vw,30px)!important}
+ #grid .tile .tile-status{font-size:14px!important}
+ #grid .tile .tile-bottom,#grid .tile .category-tag,#grid .tile .tile-when{font-size:14px!important}
+ #grid .tile .lineage-tag{font-size:14px!important}
+ #grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-title,#grid .tile[data-h="1"] .tile-title{font-size:17px!important}
+ #grid .tile[data-w="1"] .tile-status{font-size:11px!important}
+ #grid .tile[data-w="1"] .tile-bottom,#grid .tile[data-h="1"] .tile-bottom,#grid .tile[data-w="1"] .category-tag,#grid .tile[data-h="1"] .category-tag,#grid .tile[data-w="1"] .tile-when,#grid .tile[data-h="1"] .tile-when{font-size:12px!important}
+}
+
+/* Size-based typography. The prior 2x tile text is the 1x baseline.
+   2x doubles it; 3x (and larger) triples it. Based on the smaller
+   footprint dimension so a narrow 1x3 tile remains in the 1x tier. */
+#grid:not([data-layout="smash"]) .tile { --onto-font-scale: 1; }
+#grid:not([data-layout="smash"]) .tile:is([data-w="2"],[data-w="3"],[data-w="4"]):is([data-h="2"],[data-h="3"],[data-h="4"]) { --onto-font-scale: 2; }
+#grid:not([data-layout="smash"]) .tile:is([data-w="3"],[data-w="4"]):is([data-h="3"],[data-h="4"]) { --onto-font-scale: 3; }
+#grid:not([data-layout="smash"]) .tile .tile-title { font-size:calc(26px * var(--onto-font-scale))!important; line-height:1.12!important; }
+#grid:not([data-layout="smash"]) .tile .tile-status { font-size:calc(14px * var(--onto-font-scale))!important; line-height:1.15!important; }
+#grid:not([data-layout="smash"]) .tile .tile-bottom,
+#grid:not([data-layout="smash"]) .tile .category-tag,
+#grid:not([data-layout="smash"]) .tile .tile-when,
+#grid:not([data-layout="smash"]) .tile .lineage-tag { font-size:calc(14px * var(--onto-font-scale))!important; line-height:1.15!important; }
+#grid:not([data-layout="smash"]) .tile .tile-step { font-size:calc(16px * var(--onto-font-scale))!important; line-height:1.15!important; }
+
+/* Tile typography layout: top-anchored, independent header/body/footer. */
+#grid:not([data-layout="smash"]) .tile { align-items:stretch!important; justify-content:flex-start!important; gap:0!important; }
+#grid:not([data-layout="smash"]) .tile .tile-status { flex:0 0 auto!important; align-self:flex-start!important; max-width:100%; margin:0!important; }
+#grid:not([data-layout="smash"]) .tile .tile-title { display:block!important; -webkit-line-clamp:unset!important; flex:0 1 auto!important; min-height:0!important; max-height:none!important; margin:5px 0 0!important; padding:0!important; text-align:left!important; overflow:hidden!important; overflow-wrap:anywhere!important; white-space:normal!important; }
+#grid:not([data-layout="smash"]) .tile .tile-step { flex:0 1 auto!important; min-height:0!important; margin:4px 0 0!important; overflow:hidden!important; }
+#grid:not([data-layout="smash"]) .tile .tile-bottom { flex:0 0 auto!important; margin-top:auto!important; padding-top:4px!important; align-self:stretch!important; }
+
+/* Corner typography is selected by BOTH dimensions: 2x2 and 3x3 thresholds. */
+#grid:not([data-layout="smash"]) .tile { --status-pt:10pt; --bottom-pt:10pt; padding-top:calc(8px + var(--status-pt) * 1.2 + 6px)!important; }
+#grid:not([data-layout="smash"]) .tile:is([data-w="2"],[data-w="3"],[data-w="4"]):is([data-h="2"],[data-h="3"],[data-h="4"]) { --status-pt:20pt; --bottom-pt:15pt; }
+#grid:not([data-layout="smash"]) .tile:is([data-w="3"],[data-w="4"]):is([data-h="3"],[data-h="4"]) { --status-pt:30pt; --bottom-pt:20pt; }
+#grid:not([data-layout="smash"]) .tile .tile-status {
+ position:absolute!important;top:8px!important;left:8px!important;right:8px!important;
+ margin:0!important;padding:0!important;width:auto!important;max-width:none!important;
+ line-height:1.15!important;white-space:nowrap!important;
+ overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#grid:not([data-layout="smash"]) .tile .tile-bottom,
+#grid:not([data-layout="smash"]) .tile .category-tag,
+#grid:not([data-layout="smash"]) .tile .tile-when {font-size:var(--bottom-pt)!important;line-height:1.15!important;}
+#grid:not([data-layout="smash"]) .tile[data-w="1"] .tile-bottom {flex-direction:column!important;align-items:flex-start!important;gap:1px!important;}
+#grid:not([data-layout="smash"]) .tile .tile-title {margin-top:0!important;}
+/* Hoverboard at top of viewport, above board tiles but below dragged ghost. */
+#tray {top:calc(8px + env(safe-area-inset-top))!important;bottom:auto!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;z-index:1600!important;}
+.dragging .ghost {z-index:1700!important;}
+.dragging .drag-crosshair {z-index:1800!important;}
+
+/* STATUS sizing: one authoritative height-based rule, never width-based.
+   Keep the label in the same top-left position for every tile. */
+#grid:not([data-layout="smash"]) > .tile > .tile-status {
+  display:block!important;
+  position:absolute!important;
+  inset:8px 8px auto 8px!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.15!important;
+  letter-spacing:0!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+/* Keep the title below the status without a width-dependent header height. */
+#grid:not([data-layout="smash"]) > .tile {padding-top:calc(14px + var(--status-pt) * 1.15)!important;}

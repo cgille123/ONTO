@@ -1,5 +1,5 @@
-const CACHE = 'onto-pwa-startup-null-handler-20261026-v4';
-const ASSETS = ['./','./index.html','./style.css','./app.js','./browser.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE = 'onto-pwa-dimension-font-20261026-v12';
+const ASSETS = ['./','./index.html','./style.css?v=dimension-font-20261026-v12','./app.js?v=dimension-font-20261026-v12','./browser.js?v=dimension-font-20261026-v12','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('onto-pwa-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
