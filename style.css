@@ -1414,7 +1414,9 @@ body > main > .dock-buttons #disco-toggle[aria-pressed="true"]{color:#e8d8ff!imp
  .site-header #capture .capture-input-wrap{top:auto!important;bottom:0!important;inset:auto 0 0 0!important;}
 }
 
-/* v26: DISCO is a bonus control inside the expanded DISPLAY card. */
-#bottom-dock .disco-footer{display:flex!important;justify-content:flex-start!important;margin:8px 0 0!important;padding:7px 0 0!important;border-top:1px solid #ffffff16!important;}
-#bottom-dock .disco-footer #disco-toggle{display:inline-block!important;position:relative!important;z-index:3!important;pointer-events:auto!important;touch-action:manipulation!important;min-height:30px!important;}
-/* Keep the existing approved hoverboard untouched. */
+/* v27: DISCO in the existing bottom COLOR row, no additional card height. */
+#bottom-dock .color-row{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:nowrap!important;}
+#bottom-dock .color-row .disco-footer{display:flex!important;align-items:center!important;order:-1!important;flex:0 0 auto!important;margin:0!important;padding:0!important;border:0!important;position:static!important;}
+#bottom-dock .color-row .disco-footer #disco-toggle{position:static!important;min-height:28px!important;padding:3px 6px!important;font-size:10px!important;white-space:nowrap!important;pointer-events:auto!important;touch-action:manipulation!important;}
+#bottom-dock .color-row .segments{min-width:0!important;flex:1 1 auto!important;}
+@media(max-width:600px){#bottom-dock .color-row{gap:3px!important}#bottom-dock .color-row .disco-footer #disco-toggle{font-size:9px!important;padding:3px 4px!important}}

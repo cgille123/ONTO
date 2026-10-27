@@ -312,31 +312,13 @@ function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(c
 $('#thought').addEventListener('input',updateCaptureActions);
 $('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
 $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
-// One action per user activation. Touch is handled before iOS moves the keyboard;
-// the subsequent synthetic click is suppressed only for that same button.
-const captureButtons=['capture-add','capture-edit'];
-for(const id of captureButtons){
- const btn=$('#'+id);
- let suppressClick=false;
- btn.addEventListener('touchend',e=>{
-  if(btn.hidden||e.changedTouches.length!==1)return;
-  e.preventDefault();
-  suppressClick=true;
-  captureThought(id==='capture-edit');
-  updateCaptureActions();
- },{passive:false});
- btn.addEventListener('click',e=>{
-  e.preventDefault();
-  if(suppressClick){suppressClick=false;return;}
-  captureThought(id==='capture-edit');
-  updateCaptureActions();
- });
-}
+// Match the working ALREADY DONE! button: one ordinary click handler per action.
+// Do not prevent pointerdown/touchstart; WebKit must synthesize the click normally.
+$('#capture-add').addEventListener('click',()=>{captureThought(false);updateCaptureActions();});
+$('#capture-edit').addEventListener('click',()=>{captureThought(true);updateCaptureActions();});
 $('#capture').addEventListener('submit',e=>{
  e.preventDefault();
- // Enter from the keyboard submits ADD; buttons have their own handlers.
- if(e.submitter?.id==='capture-edit'||e.submitter?.id==='capture-add')return;
- captureThought(false);
+ captureThought(e.submitter?.id==='capture-edit');
  updateCaptureActions();
 });
 

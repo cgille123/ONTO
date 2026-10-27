@@ -1,5 +1,5 @@
-const CACHE = 'onto-cache-v26-ios-controls';
-const ASSETS = ['./','./index.html','./style.css?v=20261027-onto-v26-ios-controls','./app.js?v=20261027-onto-v26-ios-controls','./browser.js?v=20261027-onto-v26-ios-controls','./disco.js?v=20261027-onto-v26-ios-controls','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE = 'onto-cache-v27-native-click';
+const ASSETS = ['./','./index.html','./style.css?v=20261027-onto-v27-native-click','./app.js?v=20261027-onto-v27-native-click','./browser.js?v=20261027-onto-v27-native-click','./disco.js?v=20261027-onto-v27-native-click','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('onto-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
