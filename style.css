@@ -1256,10 +1256,10 @@ body > main > .dock-buttons #dock-toggle[aria-expanded="true"] {
 #tray #attributes .intensity-divider{display:inline-block;width:8px;flex:none}
 #tray #attributes.color-picker .intensity-dot{background:transparent;border:1px solid transparent}
 #tray #attributes.color-picker .intensity-dot.applied{border-color:#c1cddd99;background:#ffffff0a}
-#tray .tray-bottom{display:grid;grid-template-columns:minmax(0,1fr) 80px;gap:10px;align-items:center;flex:0 0 40px;height:40px;min-width:0;margin:0;padding:0}
+#tray .tray-bottom{display:grid;grid-template-columns:min(70%,360px) minmax(0,1fr);gap:10px;align-items:center;flex:0 0 40px;height:40px;min-width:0;margin:0;padding:0}
 #tray .tray-bottom .segments{
- display:grid;grid-template-columns:1fr .9fr .9fr .8fr 1.3fr;gap:4px;align-items:center;
- width:100%;max-width:450px;min-width:0;margin:0;padding:0;background:transparent;border:0;box-shadow:none;
+ display:grid;grid-template-columns:1fr .9fr .85fr .75fr 1.4fr;gap:4px;align-items:center;
+ width:100%;min-width:0;margin:0;padding:0;background:transparent;border:0;box-shadow:none;
 }
 #tray .tray-bottom button{
  display:block;position:relative;box-sizing:border-box;min-width:0;width:100%;height:40px;min-height:40px;
@@ -1289,7 +1289,7 @@ body > main > .dock-buttons #dock-toggle[aria-expanded="true"] {
 #tray .mode-hover::after{animation-duration:.35s}
 #tray #tray-more.hover::after{animation-duration:.65s}
 @media(max-width:600px){
- #tray .tray-bottom{grid-template-columns:minmax(0,1fr) 64px;gap:6px}
+ #tray .tray-bottom{gap:6px}
  #tray .tray-bottom .segments{gap:3px}
  #tray .tray-bottom button{font-size:10.5px;padding:5px 1px}
  #tray #tray-actions button{font-size:13px}
@@ -1298,3 +1298,15 @@ body > main > .dock-buttons #dock-toggle[aria-expanded="true"] {
  #tray #attributes:not(.size-picker):not(.color-picker){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
  #tray #attributes:not(.size-picker):not(.color-picker) button{width:100%;min-width:0;min-height:35px;padding:5px 3px;text-align:center;font-size:11px;white-space:normal;overflow-wrap:break-word}
 }
+
+/* Beta access uses native form controls and keeps phone input text at 16px. */
+#beta-access-dialog{width:min(540px,calc(100% - 24px))}
+#beta-access-dialog .dialog-top h2{margin:0}
+#beta-access-status{color:var(--green);font-weight:650}
+#beta-request-code,#beta-activation-key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;width:100%;min-width:0;box-sizing:border-box}
+#beta-request-copy{min-height:44px;margin-top:-5px}
+#beta-access-form .beta-key-label{margin-top:20px}
+#beta-activation-key{resize:vertical;overflow-wrap:anywhere}
+#beta-activation-error{color:#f0aabb;font-size:14px;line-height:1.4}
+#beta-access-form>.hint{display:block;line-height:1.4}
+#beta-access-form>.hint:last-child{margin-top:14px}

@@ -30,17 +30,18 @@ function startDateEdit(id,before=null){const i=get(id);if(!i)return;dateTarget=i
 $('#scheduleform').onsubmit=e=>{e.preventDefault();const i=get(dateTarget),date=$('#schedule-date').value;if(!i||!validDate(date)){$('#schedule-date').reportValidity();return;}i.when='__date__';i.date=date;persist();$('#schedule').close();render();message('Scheduled for '+whenLabel(i)+'.',dateBefore);};
 let state={version:1,colorMode:'user',items:[],order:[]}, loadError=false;
 try{const raw=localStorage.getItem(KEY);if(raw)state=validate(JSON.parse(raw));}catch(e){loadError=true;}
-// This release grants unlimited Field Beta access. Future Free builds change this
-// build setting; old device-local preview flags are not purchase entitlements.
-const FIELD_BETA=true;
+// Only a verified, installation-bound beta key unlocks unlimited tiles.
+// Legacy preview flags and imported board data never grant beta access.
 const FREE_TILE_LIMIT=6;
+function betaAccessStatus(){return window.ontoBeta?.getStatus()||{state:'unavailable',requestCode:'',canActivate:false,message:'Beta activation is unavailable in this copy. You can still use Free.'};}
+function hasBetaAccess(){return window.ontoBeta?.isActive()===true;}
 function countsTowardFreeLimit(item){return !item.closed&&!item.preset;}
 function unfinishedTaskCount(){return state.items.filter(countsTowardFreeLimit).length;}
 function remainingFreeTiles(){return Math.max(0,FREE_TILE_LIMIT-unfinishedTaskCount());}
 // Non-increasing changes remain available even on an imported or former-beta board.
-function canAddTiles(count=1){return FIELD_BETA||count<=0||unfinishedTaskCount()+count<=FREE_TILE_LIMIT;}
+function canAddTiles(count=1){return hasBetaAccess()||count<=0||unfinishedTaskCount()+count<=FREE_TILE_LIMIT;}
 function tileLimitNotice(){
- const text='6 unfinished tasks max. Future tasks count.';
+ const text=betaAccessStatus().state==='loading'?'Checking beta access… Your entry is kept; try again in a moment.':'6 unfinished tasks max. Future tasks count. Activate beta in ONTO Settings for unlimited.';
  const dialog=$$('dialog[open]').at(-1);
  if(!dialog){message(text);return;}
  let notice=dialog.querySelector('.plan-limit-notice');
@@ -54,9 +55,60 @@ function tileLimitNotice(){
 }
 function refreshPlanStatus(){
  const el=$('#plan-status');if(!el)return;
- const count=unfinishedTaskCount();
- el.textContent=FIELD_BETA?'Field Beta · Unlimited tiles':`Free · ${count}/${FREE_TILE_LIMIT} unfinished tasks${count>FREE_TILE_LIMIT?' · Existing board preserved':''}`;
+ const count=unfinishedTaskCount(),access=betaAccessStatus();
+ el.textContent=access.state==='loading'?'Checking beta access…':hasBetaAccess()?'Field Beta · Unlimited tiles':`Free · ${count}/${FREE_TILE_LIMIT} unfinished tasks${count>FREE_TILE_LIMIT?' · Existing board preserved':''}`;
+ const open=$('#beta-access-open');if(open)open.textContent=hasBetaAccess()?'Beta access…':'Activate beta…';
+ syncBetaAccessDialog();
 }
+let betaActivationBusy=false;
+function syncBetaAccessDialog(){
+ const dialog=$('#beta-access-dialog');if(!dialog)return;
+ const access=betaAccessStatus(),request=$('#beta-request-code');
+ request.value=access.requestCode;
+ $('#beta-access-status').textContent=access.message;
+ $('#beta-request-copy').disabled=!access.requestCode;
+ $('#beta-activate').disabled=betaActivationBusy||!access.canActivate;
+ $('#beta-activate').textContent=betaActivationBusy?'Checking…':'Activate';
+}
+function betaActivationError(text){
+ const notice=$('#beta-activation-error');
+ notice.textContent=text;notice.hidden=!text;
+}
+$('#beta-access-open')?.addEventListener('click',()=>{
+ cancelCurrentDrag();
+ $('#beta-activation-key').value='';
+ betaActivationError('');syncBetaAccessDialog();
+ $('#beta-access-dialog').showModal();
+});
+$('#beta-request-copy')?.addEventListener('click',async()=>{
+ const code=betaAccessStatus().requestCode;if(!code)return;
+ try{
+  if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable.');
+  await navigator.clipboard.writeText(code);
+  $('#beta-access-status').textContent='Request code copied. Send it to the beta owner.';
+ }catch(_){
+  const input=$('#beta-request-code');input.focus();input.select();input.setSelectionRange(0,input.value.length);
+  $('#beta-access-status').textContent='Select and copy the request code above, then send it to the beta owner.';
+ }
+});
+$('#beta-access-form')?.addEventListener('submit',async e=>{
+ e.preventDefault();if(betaActivationBusy)return;
+ betaActivationBusy=true;betaActivationError('');syncBetaAccessDialog();
+ try{
+  if(!window.ontoBeta)throw Error(betaAccessStatus().message);
+  await window.ontoBeta.activate($('#beta-activation-key').value);
+  $('#beta-activation-key').value='';
+  refreshPlanStatus();
+  $('#beta-access-dialog').close();
+  message('Beta activated. Unlimited tiles on this installation.');
+ }catch(failure){
+  betaActivationError(failure.message||'The beta key could not be activated.');
+ }finally{
+  betaActivationBusy=false;syncBetaAccessDialog();
+ }
+});
+window.addEventListener('onto:beta-access-changed',refreshPlanStatus);
+window.ontoBeta?.ready.then(refreshPlanStatus);
 $('#about-onto')?.addEventListener('click',()=>$('#onto-guide').showModal());
 $('#close-onto-guide')?.addEventListener('click',()=>$('#onto-guide').close());
 $('#guide-done')?.addEventListener('click',()=>$('#onto-guide').close());
@@ -652,7 +704,7 @@ function autoScroll(){
 // Native click opens a tile only after an unmoved tap finishes.
 // Opening on pointerup lets WebKit's following click land inside the new dialog.
 let pendingTileClick=null;
-$('#grid').addEventListener('pointerdown',e=>{pendingTileClick=null;if(drag||e.button!==0||e.target.closest('[data-select], [data-preset-edit]'))return;const tile=e.target.closest('.tile');if(!tile)return;drag={id:tile.dataset.id,pointer:e.pointerId,type:e.pointerType,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastY:e.clientY,lastX:e.clientX,active:false,moved:false,changed:false};drag.timer=setTimeout(beginDrag,320);});
+$('#grid').addEventListener('pointerdown',e=>{pendingTileClick=null;if(drag||e.button!==0||e.target.closest('[data-select], [data-preset-edit]'))return;const tile=e.target.closest('.tile');if(!tile)return;drag={id:tile.dataset.id,pointer:e.pointerId,type:e.pointerType,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastY:e.clientY,lastX:e.clientX,active:false,moved:false,changed:false};drag.timer=setTimeout(beginDrag,150);});
 document.addEventListener('pointermove',e=>{
  if(!drag||drag.pointer!==e.pointerId)return;
  drag.x=e.clientX;drag.y=e.clientY;

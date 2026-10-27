@@ -1,5 +1,5 @@
-const CACHE = 'onto-cache-v35-hoverboard-more';
-const ASSETS = ['./','./index.html','./style.css?v=20261027-onto-v35-hoverboard-more','./app.js?v=20261027-onto-v35-hoverboard-more','./browser.js?v=20261027-onto-v35-hoverboard-more','./disco.js?v=20261027-onto-v35-hoverboard-more','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE = 'onto-cache-v36-beta-keys';
+const ASSETS = ['./','./index.html','./beta-public-key.js?v=20261027-onto-v36-beta-keys','./beta-access.js?v=20261027-onto-v36-beta-keys','./style.css?v=20261027-onto-v36-beta-keys','./app.js?v=20261027-onto-v36-beta-keys','./browser.js?v=20261027-onto-v36-beta-keys','./disco.js?v=20261027-onto-v36-beta-keys','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('onto-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
