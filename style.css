@@ -1239,3 +1239,30 @@ body > main > .dock-buttons{pointer-events:auto!important}
  background:linear-gradient(145deg,rgba(90,120,255,.055),transparent 55%,rgba(190,75,255,.045));}
 #grid.disco-on>.tile>*{position:relative;z-index:1;}
 @media(prefers-reduced-motion:reduce){#grid .disco-socket-light{animation:none!important;opacity:.16!important;}}
+
+/* DISCO compact controls: preserve board geometry and existing display height. */
+#bottom-dock .scale-row{flex-wrap:wrap;}
+#bottom-dock .scale-row #disco-toggle{margin-left:auto;min-height:30px;padding:4px 9px;font-size:11px;white-space:nowrap;flex:0 0 auto;}
+.site-header #capture #capture-done{flex:0 0 110px!important;min-width:0!important;width:110px!important;max-width:110px!important;padding-inline:3px!important;font-size:11px!important;letter-spacing:-.2px!important;}
+@media(max-width:600px){.site-header #capture #capture-done{width:100%!important;max-width:none!important;flex:initial!important;font-size:10px!important;}#bottom-dock .scale-row #disco-toggle{font-size:10px;padding:3px 7px;}}
+
+/* iOS: preserve the full logical board canvas rather than viewport-clamping it. */
+#board-scroll[data-layout="fixed"] #board-canvas {max-width:none!important;flex-shrink:0!important;}
+#disco-toggle {touch-action:manipulation;position:relative;z-index:2;}
+
+/* v14: steady hoverboard footprint, anchored to the SIZE selector. */
+#tray:not(.group-therapy){height:176px!important;min-height:176px!important;max-height:176px!important;box-sizing:border-box!important;position:fixed!important;}
+#tray:not(.group-therapy) #attributes{height:112px!important;min-height:112px!important;max-height:112px!important;flex:0 0 112px!important;overflow-y:auto!important;align-content:start!important;align-items:start!important;padding-right:62px!important;}
+#tray:not(.group-therapy) #attributes.size-picker{overflow:visible!important;}
+#tray #tray-close{position:absolute!important;right:10px!important;top:10px!important;z-index:5!important;min-height:30px!important;padding:4px 8px!important;font-size:10px!important;border-color:#7794ac88!important;}
+#tray #tray-close.hover{border-color:var(--green)!important;color:var(--green)!important;}
+#tray[hidden]{display:none!important;}
+/* Keep drag copy at the same rendered scale as the source tile. */
+.dragging .ghost{transform:none!important;transform-origin:top left!important;}
+.dragging .ghost .tile-status,.dragging .ghost .tile-bottom{font-size:inherit;}
+/* One notch darker without touching the socket pitch, frame or tile positions. */
+#board-scroll[data-layout="fixed"] #grid,#board-scroll[data-layout="tiles"] #grid{filter:brightness(.89)!important;}
+@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+ #tray:not(.group-therapy){height:176px!important;min-height:176px!important;max-height:176px!important;}
+ #tray:not(.group-therapy) #attributes{height:112px!important;min-height:112px!important;max-height:112px!important;flex:0 0 112px!important;}
+}
