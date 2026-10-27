@@ -1333,3 +1333,15 @@ body:has(#grid[data-layout="smash"]) .site-header .onto-footer-left{pointer-even
  #tray:not(.group-therapy) .tray-bottom{position:absolute!important;left:9px!important;right:9px!important;bottom:8px!important;width:calc(100% - 18px)!important;margin:0!important;}
  #tray:not(.group-therapy) #attributes{margin-bottom:38px!important;}
 }
+
+/* v19: mobile capture actions float ABOVE the input; no layout reflow. */
+@media (max-width:600px){
+ .site-header #capture{display:block!important;position:fixed!important;height:44px!important;min-height:44px!important;overflow:visible!important;}
+ .site-header #capture .capture-input-wrap{display:flex!important;position:absolute!important;inset:0!important;width:100%!important;height:44px!important;}
+ .site-header #capture #capture-add,.site-header #capture #capture-edit,.site-header #capture #capture-done{position:absolute!important;top:-41px!important;bottom:auto!important;grid-row:auto!important;grid-column:auto!important;height:36px!important;min-height:36px!important;padding:3px 8px!important;font-size:11px!important;z-index:3!important;touch-action:manipulation!important;}
+ .site-header #capture #capture-add{left:0!important;right:auto!important;}
+ .site-header #capture #capture-edit{left:57px!important;right:auto!important;}
+ .site-header #capture #capture-done{left:auto!important;right:0!important;width:auto!important;max-width:none!important;}
+}
+/* v19: closing the hoverboard is a one-second drag dwell, not a drop action. */
+#tray #tray-close{top:auto!important;bottom:43px!important;right:9px!important;width:30px!important;min-width:30px!important;height:30px!important;padding:0!important;font-size:19px!important;line-height:1!important;}
