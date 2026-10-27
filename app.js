@@ -308,20 +308,14 @@ function captureThought(edit=false){const title=$('#thought').value.trim();if(!t
   // grid can leave WebKit at its input-focus magnification until rotation.
   // End the editing session before any DOM/grid measurements.
   if(document.activeElement===$('#thought'))$('#thought').blur();const before=clone(state),i=stage(title);state.items.push(i);state.order.unshift(i.id);returnToNow();categoryFilter='';statusFilter='';whenFilter='';persist();render();$('#thought').value='';message(!showFuture&&isFuture(i)?'Captured for '+whenLabel(i)+'. Turn on Future to see it.':'Captured. Details can wait.',before);if(edit)openEditor(i.id,'subname');return i.id;}
-function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(const id of ['capture-add','capture-edit','capture-done','capture-clear'])$('#'+id).hidden=!hasText;}
+function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(const id of ['capture-add','capture-edit'])$('#'+id).disabled=!hasText;for(const id of ['capture-done','capture-clear'])$('#'+id).hidden=!hasText;}
 $('#thought').addEventListener('input',updateCaptureActions);
 $('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
 $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
-// Use the same native click activation that works for ALREADY DONE! on iOS.
-// Buttons are not form submitters: WebKit keyboard viewport changes cannot
-// interrupt an intermediate submit event.
-$('#capture-add').addEventListener('click',()=>{captureThought(false);updateCaptureActions();});
-$('#capture-edit').addEventListener('click',()=>{captureThought(true);updateCaptureActions();});
-$('#capture').addEventListener('submit',e=>{
- e.preventDefault();
- captureThought(false);
- updateCaptureActions();
-});
+// One activation route for every platform. No touch/pointer interception.
+$('#capture-add').addEventListener('click',e=>{e.preventDefault();captureThought(false);updateCaptureActions();});
+$('#capture-edit').addEventListener('click',e=>{e.preventDefault();captureThought(true);updateCaptureActions();});
+$('#capture').addEventListener('submit',e=>{e.preventDefault();captureThought(false);updateCaptureActions();});
 
 updateCaptureActions();
 $('#now').onclick=()=>{switchView('now');showFuture=false;$('#show-future').checked=false;render();};$('#past').onclick=()=>switchView('past');$('#clear-view-filters').onclick=()=>{categoryFilter='';statusFilter='';whenFilter='';render();};$('#filter').onchange=e=>{if(e.target.value==='__manage__'){e.target.value=categoryFilter;openManage('category');return;}categoryFilter=e.target.value;renderGrid();};
