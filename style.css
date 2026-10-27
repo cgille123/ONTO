@@ -1397,3 +1397,19 @@ body > main > .dock-buttons #disco-toggle[aria-pressed="true"]{color:#e8d8ff!imp
  .site-header #capture #capture-edit{left:58px!important;right:auto!important}
  .site-header #capture #capture-done{left:auto!important;right:0!important}
 }
+
+/* v25: stable hoverboard footer; CLOSE between DELETE and STATUS. */
+#tray:not(.group-therapy){position:fixed!important;box-sizing:border-box!important;}
+#tray:not(.group-therapy) .tray-bottom{position:absolute!important;left:9px!important;right:9px!important;bottom:8px!important;width:calc(100% - 18px)!important;display:grid!important;grid-template-columns:56px 30px minmax(0,1fr) 92px!important;gap:4px!important;align-items:center!important;}
+#tray:not(.group-therapy) .tray-bottom #tray-delete{grid-column:1!important;}
+#tray:not(.group-therapy) .tray-bottom #tray-close{grid-column:2!important;position:static!important;justify-self:center!important;width:28px!important;min-width:28px!important;}
+#tray:not(.group-therapy) .tray-bottom .segments{grid-column:3!important;}
+#tray:not(.group-therapy) .tray-bottom #never-mind{grid-column:4!important;}
+#tray:not(.group-therapy) #attributes{margin-bottom:40px!important;}
+@media(max-width:600px){
+ #tray:not(.group-therapy) .tray-bottom{grid-template-columns:42px 26px minmax(0,1fr) 72px!important;gap:2px!important;}
+ #tray:not(.group-therapy) .tray-bottom #tray-close{width:25px!important;min-width:25px!important;}
+ /* Keep action controls in the input's touch region without a second layout jump. */
+ .site-header #capture{height:88px!important;min-height:88px!important;}
+ .site-header #capture .capture-input-wrap{top:auto!important;bottom:0!important;inset:auto 0 0 0!important;}
+}
