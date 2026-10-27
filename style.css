@@ -1354,3 +1354,22 @@ body:has(#grid[data-layout="smash"]) .site-header .onto-footer-left{pointer-even
 #tray .tray-bottom{grid-template-columns:minmax(55px,1fr) auto minmax(70px,1fr) 30px!important;}
 #tray .tray-bottom #tray-close{position:static!important;grid-column:4!important;justify-self:end!important;align-self:center!important;min-width:28px!important;width:28px!important;height:29px!important;min-height:29px!important;margin:0!important;padding:0!important;font-size:20px!important;line-height:1!important;z-index:2!important;}
 @media (max-width:600px){#tray .tray-bottom{grid-template-columns:42px minmax(0,1fr) 68px 27px!important;gap:2px!important;}#tray .tray-bottom #tray-close{width:27px!important;min-width:27px!important;}}
+
+/* v22: bonus DISCO belongs beside MOMENTUM and DISPLAY, never inside the card. */
+body > main > .dock-buttons #disco-toggle{display:block!important;min-width:82px!important;white-space:nowrap!important;font-size:11px!important;touch-action:manipulation!important;pointer-events:auto!important;}
+body > main > .dock-buttons #disco-toggle[aria-pressed="true"]{color:#e8d8ff!important;border-color:#a777f2!important;background:#42265e!important;}
+#bottom-dock:not(.dock-collapsed){padding-bottom:49px!important;}
+/* Hoverboard: keep the full selector row, including X, in view without horizontal scrolling. */
+#tray:not(.group-therapy){width:min(610px,calc(100vw - 20px))!important;overflow-x:hidden!important;}
+#tray .tray-bottom{grid-template-columns:50px minmax(0,1fr) 85px 28px!important;gap:3px!important;min-width:0!important;}
+#tray .tray-bottom .segments{min-width:0!important;width:100%!important;justify-content:center!important;}
+#tray .tray-bottom .segments button{min-width:0!important;padding:4px 4px!important;font-size:10px!important;}
+#tray .tray-bottom #never-mind{font-size:10px!important;padding:4px 5px!important;}
+#tray .tray-bottom #tray-close{grid-column:4!important;position:static!important;}
+@media(max-width:600px){
+ body > main > .dock-buttons{gap:4px!important;right:10px!important;}
+ body > main > .dock-buttons button{min-width:72px!important;padding:5px 6px!important;font-size:10px!important;}
+ body > main > .dock-buttons #disco-toggle{min-width:70px!important;font-size:10px!important;}
+ #tray .tray-bottom{grid-template-columns:40px minmax(0,1fr) 67px 27px!important;gap:2px!important;}
+ #tray .tray-bottom .segments button{padding:4px 1px!important;font-size:9px!important;}
+}

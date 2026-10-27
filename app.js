@@ -312,6 +312,19 @@ function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(c
 $('#thought').addEventListener('input',updateCaptureActions);
 $('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
 $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
+// iOS Safari can blur the focused input and move the visual viewport before
+// a click reaches these floating controls. Act on touchstart while the target
+// is still under the finger, and suppress its later synthetic click.
+for(const [id,edit] of [['capture-add',false],['capture-edit',true]]){
+ const button=$('#'+id);
+ button.addEventListener('touchstart',e=>{
+  if(button.hidden||!$('#thought').value.trim())return;
+  e.preventDefault();
+  e.stopPropagation();
+  captureThought(edit);
+  updateCaptureActions();
+ },{passive:false});
+}
 // Native form submission preserves iOS touch activation and submitter identity.
 $('#capture').addEventListener('submit',e=>{
  e.preventDefault();

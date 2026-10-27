@@ -1,5 +1,5 @@
-const CACHE = 'onto-cache-v21-display-disco';
-const ASSETS = ['./','./index.html','./style.css?v=20261027-onto-v21-display-disco','./app.js?v=20261027-onto-v21-display-disco','./browser.js?v=20261027-onto-v21-display-disco','./disco.js?v=20261027-onto-v21-display-disco','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE = 'onto-cache-v23-capture-touch';
+const ASSETS = ['./','./index.html','./style.css?v=20261027-onto-v23-capture-touch','./app.js?v=20261027-onto-v23-capture-touch','./browser.js?v=20261027-onto-v23-capture-touch','./disco.js?v=20261027-onto-v23-capture-touch','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('onto-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
