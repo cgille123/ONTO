@@ -317,13 +317,19 @@ $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.
 // is still under the finger, and suppress its later synthetic click.
 for(const [id,edit] of [['capture-add',false],['capture-edit',true]]){
  const button=$('#'+id);
- button.addEventListener('touchstart',e=>{
+ let handledAt=0;
+ const activate=e=>{
   if(button.hidden||!$('#thought').value.trim())return;
+  if(e.type==='pointerdown' && e.pointerType!=='touch')return;
+  if(Date.now()-handledAt<650){e.preventDefault();return;}
+  handledAt=Date.now();
   e.preventDefault();
   e.stopPropagation();
   captureThought(edit);
   updateCaptureActions();
- },{passive:false});
+ };
+ button.addEventListener('pointerdown',activate,{passive:false});
+ button.addEventListener('touchstart',activate,{passive:false});
 }
 // Native form submission preserves iOS touch activation and submitter identity.
 $('#capture').addEventListener('submit',e=>{
