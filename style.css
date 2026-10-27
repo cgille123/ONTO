@@ -1222,3 +1222,20 @@ body > main > .dock-buttons{pointer-events:auto!important}
  background-repeat:repeat!important; overflow:hidden!important;
 }
 #board-scroll[data-layout="fixed"] #fixed-preview {z-index:4!important;}
+
+/* DISCO: decorative only; no changes to socket pitch, tiles or drag geometry. */
+.disco-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px;}
+#disco-toggle{min-height:32px;padding:4px 13px;font-weight:750;letter-spacing:.08em;}
+#disco-toggle[aria-pressed="true"]{color:#e8d8ff;border-color:#a777f2;background:#42265e;}
+#capture-done{font-size:clamp(10px,1.9vw,13px)!important;letter-spacing:0!important;white-space:nowrap!important;padding-inline:9px!important;}
+#grid .disco-socket-light{position:absolute;z-index:0;pointer-events:none;display:block;width:84px;height:84px;border-radius:13px;opacity:0;
+ background:radial-gradient(ellipse at 50% 52%,var(--disco-color) 0%,transparent 75%);
+ box-shadow:inset 0 0 16px 3px var(--disco-color),0 0 15px 4px var(--disco-color);
+ animation:onto-disco-pulse var(--disco-duration,5s) ease-in-out infinite;animation-delay:var(--disco-delay,0s);}
+@keyframes onto-disco-pulse{0%,100%{opacity:0}42%,58%{opacity:.50}}
+#grid.disco-on>.tile{position:relative;z-index:1;isolation:isolate;}
+/* A slight colored light reflection on the tile surface; text remains fully opaque. */
+#grid.disco-on>.tile::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;border-radius:inherit;
+ background:linear-gradient(145deg,rgba(90,120,255,.055),transparent 55%,rgba(190,75,255,.045));}
+#grid.disco-on>.tile>*{position:relative;z-index:1;}
+@media(prefers-reduced-motion:reduce){#grid .disco-socket-light{animation:none!important;opacity:.16!important;}}

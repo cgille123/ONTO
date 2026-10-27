@@ -1,5 +1,5 @@
-const CACHE = 'onto-unified-grid-v10';
-const ASSETS = ['./','./index.html','./style.css?v=20261026-unified-grid-v10','./app.js?v=20261026-unified-grid-v10','./browser.js?v=20261026-unified-grid-v10','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE = 'onto-disco-v11';
+const ASSETS = ['./','./index.html','./style.css?v=20261026-disco-v11','./app.js?v=20261026-disco-v11','./browser.js?v=20261026-disco-v11','./disco.js?v=20261026-disco-v11','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('onto-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
