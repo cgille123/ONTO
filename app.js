@@ -312,13 +312,14 @@ function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(c
 $('#thought').addEventListener('input',updateCaptureActions);
 $('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
 $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
-// Match the working ALREADY DONE! button: one ordinary click handler per action.
-// Do not prevent pointerdown/touchstart; WebKit must synthesize the click normally.
+// Use the same native click activation that works for ALREADY DONE! on iOS.
+// Buttons are not form submitters: WebKit keyboard viewport changes cannot
+// interrupt an intermediate submit event.
 $('#capture-add').addEventListener('click',()=>{captureThought(false);updateCaptureActions();});
 $('#capture-edit').addEventListener('click',()=>{captureThought(true);updateCaptureActions();});
 $('#capture').addEventListener('submit',e=>{
  e.preventDefault();
- captureThought(e.submitter?.id==='capture-edit');
+ captureThought(false);
  updateCaptureActions();
 });
 
