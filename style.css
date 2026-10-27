@@ -1266,3 +1266,12 @@ body > main > .dock-buttons{pointer-events:auto!important}
  #tray:not(.group-therapy){height:176px!important;min-height:176px!important;max-height:176px!important;}
  #tray:not(.group-therapy) #attributes{height:112px!important;min-height:112px!important;max-height:112px!important;flex:0 0 112px!important;}
 }
+
+/* STACK hit-area repair: the decorative header must not intercept the
+   first rows when compact strips sit against the top of the scroller.
+   Keep actual header controls interactive. */
+body:has(#grid[data-layout="smash"]) .site-header{pointer-events:none!important;}
+body:has(#grid[data-layout="smash"]) .site-header button,
+body:has(#grid[data-layout="smash"]) .site-header input,
+body:has(#grid[data-layout="smash"]) .site-header form,
+body:has(#grid[data-layout="smash"]) .site-header .onto-footer-left{pointer-events:auto!important;}
