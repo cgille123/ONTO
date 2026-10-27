@@ -1345,3 +1345,12 @@ body:has(#grid[data-layout="smash"]) .site-header .onto-footer-left{pointer-even
 }
 /* v19: closing the hoverboard is a one-second drag dwell, not a drop action. */
 #tray #tray-close{top:auto!important;bottom:43px!important;right:9px!important;width:30px!important;min-width:30px!important;height:30px!important;padding:0!important;font-size:19px!important;line-height:1!important;}
+
+/* v21: DISPLAY organization and bottom-row hoverboard close. */
+#bottom-dock .filter-header-layout .quick-actions{gap:5px!important;}
+#bottom-dock .filter-header-layout .quick-actions button{min-height:27px!important;}
+#bottom-dock .disco-footer{display:flex;justify-content:flex-start;margin-top:7px;padding-top:6px;border-top:1px solid #ffffff16;}
+#bottom-dock .disco-footer #disco-toggle{position:relative!important;min-height:28px!important;padding:3px 9px!important;font-size:10px!important;margin:0!important;}
+#tray .tray-bottom{grid-template-columns:minmax(55px,1fr) auto minmax(70px,1fr) 30px!important;}
+#tray .tray-bottom #tray-close{position:static!important;grid-column:4!important;justify-self:end!important;align-self:center!important;min-width:28px!important;width:28px!important;height:29px!important;min-height:29px!important;margin:0!important;padding:0!important;font-size:20px!important;line-height:1!important;z-index:2!important;}
+@media (max-width:600px){#tray .tray-bottom{grid-template-columns:42px minmax(0,1fr) 68px 27px!important;gap:2px!important;}#tray .tray-bottom #tray-close{width:27px!important;min-width:27px!important;}}
