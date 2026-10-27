@@ -1,6 +1,6 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const MATRIX_COLUMNS=10;
+const MATRIX_COLUMNS=24;
 const KEY='onto-trial-v1', statuses=['Do It!','Active','Waiting'],defaultWhens=['Someday','ASAP','Soon','Pending','Started'];
 const tileColors=['none','blue','teal','violet','amber','rose','deepblue','deeppurple'], colorNames={none:'None',blue:'Blue',teal:'Teal',violet:'Violet',amber:'Amber',rose:'Rose',deepblue:'Deep Blue',deeppurple:'Deep Purple'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -126,98 +126,177 @@ function firstFreeFixed(size,boxes,startRow=0){const last=Math.max(startRow,...b
 function ensureFixedPositions(){if(layout!=='fixed'&&!state.items.some(i=>i.fixed))return;const groups={now:[],past:[]},pending=[];for(const i of state.order.map(get).filter(Boolean)){const sz=sizeOf(i),layer=fixedLayer(i),box=i.fixed?fixedBox(i):null,stable=box&&validFixed(box,sz)&&(!i.fixed.layer||i.fixed.layer===layer)&&(!i.fixed.width||i.fixed.width===sz.width)&&(!i.fixed.height||i.fixed.height===sz.height)&&!groups[layer].some(b=>overlaps(box,b));if(stable){i.fixed={col:box.col,row:box.row,...sz,layer};groups[layer].push(box);}else pending.push(i);}for(const i of pending){const sz=sizeOf(i),layer=fixedLayer(i),existing=i.fixed?fixedBox(i):null,box=existing&&validFixed(existing,sz)&&!groups[layer].some(b=>overlaps(existing,b))?existing:firstFreeFixed(sz,groups[layer]);i.fixed={col:box.col,row:box.row,...sz,layer};groups[layer].push(box);}}
 function fixedBlocker(i,position,size=sizeOf(i)){const candidate={...position,...size};return state.items.find(n=>n.id!==i.id&&n.closed===i.closed&&n.fixed&&overlaps(candidate,fixedBox(n)));}
 function canPlaceFixed(i,position,size=sizeOf(i)){return validFixed(position,size)&&!fixedBlocker(i,position,size);}
+function sizePlacementReason(i,position,size){
+ if(!validFixed(position,size))return 'That size extends beyond the FIXED board width.';
+ const blocker=fixedBlocker(i,position,size);
+ if(!blocker)return '';
+ const overlapCols=[];const overlapRows=[];
+ const b=fixedBox(blocker);
+ for(let col=Math.max(position.col,b.col);col<Math.min(position.col+size.width,b.col+b.width);col++)overlapCols.push(col+1);
+ for(let row=Math.max(position.row,b.row);row<Math.min(position.row+size.height,b.row+b.height);row++)overlapRows.push(row+1);
+ return 'Blocked by “'+blocker.title+'”'+(visible().some(tile=>tile.id===blocker.id)?'':' (hidden by filters)')+' at column '+overlapCols.join(', ')+' / row '+overlapRows.join(', ')+'.';
+}
+
 function placeFixed(i,position){if(!canPlaceFixed(i,position))return false;i.fixed={col:position.col,row:position.row,...sizeOf(i),layer:fixedLayer(i)};return true;}
-function matrixRows(){const nodes=state.items.filter(i=>i.closed===(view==='past')&&i.fixed);return Math.max(6,...nodes.map(i=>i.fixed.row+sizeOf(i).height+4));}
+function matrixRows(){const nodes=state.items.filter(i=>i.closed===(view==='past')&&i.fixed);return Math.max(48,drag?.active&&layout==='fixed'?drag.extraRows||0:0,...nodes.map(i=>i.fixed.row+sizeOf(i).height+4));}
 function tileGridStyle(i){const sz=visualSize(i);return layout==='fixed'&&i.fixed?`grid-column:${i.fixed.col+1} / span ${sz.width};grid-row:${i.fixed.row+1} / span ${sz.height}`:`grid-column:span ${sz.width};grid-row:span ${sz.height}`;}
 function clearFixedPreview(){if(drag)drag.fixedCandidate=null;$('#fixed-preview').hidden=true;$('#matrix-hint').hidden=true;}
 function fixedCandidateAt(x,y){if(!drag?.active||layout!=='fixed')return null;const board=$('#board-scroll').getBoundingClientRect(),dock=$('#bottom-dock').getBoundingClientRect();if(x<board.left||x>board.right||y<board.top||y>board.bottom||(x>=dock.left&&x<=dock.right&&y>=dock.top&&y<=dock.bottom))return null;const grid=$('#grid'),rect=grid.getBoundingClientRect(),unit=parseFloat(grid.style.getPropertyValue('--cell-size')),step=(unit+12)*fixedZoom;const col=Math.round((x-drag.offsetX-rect.left)/step),row=Math.round((y-drag.offsetY-rect.top)/step);if(col<0||col>=MATRIX_COLUMNS||row<0)return null;const i=get(drag.id),position={col,row},blocker=fixedBlocker(i,position),valid=canPlaceFixed(i,position);return {...position,valid,blocker:blocker?.id};}
-function previewFixed(x,y){const candidate=fixedCandidateAt(x,y);if(!candidate){clearFixedPreview();return;}drag.fixedCandidate=candidate;const preview=$('#fixed-preview'),sz=sizeOf(get(drag.id)),unit=parseFloat($('#grid').style.getPropertyValue('--cell-size'));preview.hidden=false;preview.dataset.valid=String(candidate.valid);preview.style.left=candidate.col*(unit+12)*fixedZoom+'px';preview.style.top=candidate.row*(unit+12)*fixedZoom+'px';preview.style.width=(sz.width*unit+(sz.width-1)*12)*fixedZoom+'px';preview.style.height=(sz.height*unit+(sz.height-1)*12)*fixedZoom+'px';const hint=$('#matrix-hint');hint.hidden=false;hint.textContent=candidate.valid?'Release to place · column '+(candidate.col+1)+', row '+(candidate.row+1):candidate.blocker?'Occupied by '+get(candidate.blocker).title+(visible().some(i=>i.id===candidate.blocker)?'':' (hidden by your filters)'):'Tile extends beyond the board';}
+function previewFixed(x,y){const candidate=fixedCandidateAt(x,y);if(!candidate){clearFixedPreview();return;}drag.fixedCandidate=candidate;const preview=$('#fixed-preview'),sz=sizeOf(get(drag.id)),unit=parseFloat($('#grid').style.getPropertyValue('--cell-size'));preview.hidden=false;preview.dataset.valid=String(candidate.valid);preview.style.left=(8+candidate.col*(unit+12)*fixedZoom)+'px';preview.style.top=(8+candidate.row*(unit+12)*fixedZoom)+'px';preview.style.width=(sz.width*unit+(sz.width-1)*12)*fixedZoom+'px';preview.style.height=(sz.height*unit+(sz.height-1)*12)*fixedZoom+'px';const hint=$('#matrix-hint');hint.hidden=false;hint.textContent=candidate.valid?'Release to place · column '+(candidate.col+1)+', row '+(candidate.row+1):candidate.blocker?'Occupied by '+get(candidate.blocker).title+(visible().some(i=>i.id===candidate.blocker)?'':' (hidden by your filters)'):'Tile extends beyond the board';}
 function moveFixedControl(direction){const i=get(selected);if(!i?.fixed)return;const before=clone(state),position={col:i.fixed.col,row:i.fixed.row+direction};if(!placeFixed(i,position)){message('That matrix space is occupied or outside the board.');return;}persist();renderGrid();message('Tile moved one matrix row.',before);}
 function moveFixedEdge(edge){const i=get(selected);if(!i?.fixed)return;const boxes=state.items.filter(n=>n.id!==i.id&&n.closed===i.closed&&n.fixed).map(fixedBox),position=edge==='first'?firstFreeFixed(sizeOf(i),boxes):{col:i.fixed.col,row:Math.max(0,...boxes.map(b=>b.row+b.height))};if(position.col===i.fixed.col&&position.row===i.fixed.row)return;const before=clone(state);if(placeFixed(i,position)){persist();renderGrid();message('Tile moved to '+(edge==='first'?'the first free space.':'the last row.'),before);}}
+// Column controls: FLOW rewraps; FIXED only changes the view scale.
+let flowColumnCount=10, fixedVisibleColumns=10;
+try {
+ const f=Number(localStorage.getItem('onto-flow-columns'));
+ const x=Number(localStorage.getItem('onto-fixed-visible-columns'));
+ if(Number.isInteger(f)&&f>=6&&f<=20)flowColumnCount=f;
+ if(Number.isInteger(x)&&x>=6&&x<=24)fixedVisibleColumns=x;
+} catch(e){}
 function boardScale(){return layout==='fixed'?fixedZoom:layout==='tiles'?flowZoom:1;}
-function flowColumns(width,scale=1){return 2*Math.max(2,Math.floor((width/scale+12)/180));}
 function syncBoardControls(){
   for(const [id,mode] of [['view-flow','tiles'],['view-fixed','fixed'],['view-stack','smash']]){const button=$('#'+id);button.classList.toggle('selected',layout===mode);button.setAttribute('aria-pressed',layout===mode);}
   for(const mode of ['user','category','age','status']){const button=$('#color-'+mode);button.classList.toggle('selected',state.colorMode===mode);button.setAttribute('aria-pressed',state.colorMode===mode);}
   const future=$('#future-toggle');future.disabled=false;future.classList.toggle('selected',view==='now'&&showFuture);future.setAttribute('aria-pressed',view==='now'&&showFuture);future.title='Show today and future tasks';
 }
 function measureGrid(){
-  const grid=$('#grid'),board=$('#board-scroll'),canvas=$('#board-canvas');
-  $('#board-zoom').hidden=false;board.dataset.layout=layout;syncBoardControls();
-  const fixed=layout==='fixed',stack=layout==='smash';
-  $('#zoom-all').hidden=!fixed;
-  for(const id of ['zoom-out','zoom-in','zoom-reset'])$('#'+id).disabled=stack;
-  if(!grid.style||!canvas.style)return;
-  grid.style.gridTemplateRows=fixed?'repeat('+matrixRows()+', var(--cell-size))':'';
-  $('#fixed-preview').hidden=!fixed||!drag?.fixedCandidate;
-  if(stack){grid.style.width='100%';grid.style.transform='';canvas.style.width='';canvas.style.height='';$('#zoom-reset').textContent='—';return;}
-  if(fixed)grid.style.width='960px';
-  else {
-    // Derive the logical board width from the scrollport, never from the
-    // previously scaled grid or the expanding contents of the canvas.
-    const boardStyle=getComputedStyle(board);
-    const available=board.clientWidth-(parseFloat(boardStyle.paddingLeft)||0)-(parseFloat(boardStyle.paddingRight)||0);
-    // On a cold PWA launch the scrollport may not yet have a measurable width.
-    // Derive the initial width from the layout viewport instead of leaving
-    // the absolute-positioned tile grid with no explicit width until a click.
-    const initialWidth=available>0?available:Math.max(240,document.documentElement.clientWidth-48);
-    grid.style.width=(initialWidth/flowZoom)+'px';
-  }
-  const width=fixed?960:parseFloat(grid.style.width);
-  if(!width)return;
-  const columns=fixed?MATRIX_COLUMNS:flowColumns(width);
-  grid.style.setProperty('--half-columns',columns);grid.style.setProperty('--cell-size',((width-12*(columns-1))/columns)+'px');
-  if(fixed&&fitBoard){
-    // Fit the occupied FIXED tile bounds, not matrixRows()'s extra empty rows.
-    const placed=visible().filter(i=>i.fixed);
-    const unit=parseFloat(grid.style.getPropertyValue('--cell-size'));
-    const right=placed.length?Math.max(...placed.map(i=>i.fixed.col+visualSize(i).width)):MATRIX_COLUMNS;
-    const bottom=placed.length?Math.max(...placed.map(i=>i.fixed.row+visualSize(i).height)):1;
-    const occupiedWidth=right*unit+Math.max(0,right-1)*12;
-    const occupiedHeight=bottom*unit+Math.max(0,bottom-1)*12;
-    const boardRect=board.getBoundingClientRect(),dockRect=$('#bottom-dock').getBoundingClientRect();
-    const availableWidth=Math.max(80,board.clientWidth-(window.innerWidth<=540?32:56));
-    const availableHeight=Math.max(60,dockRect.top-boardRect.top-20);
-    const rawFit=Math.min(availableWidth/Math.max(1,occupiedWidth),availableHeight/Math.max(1,occupiedHeight));
-    fixedZoom=Math.max(.4,Math.min(2,Math.floor((rawFit+1e-9)*10)/10));
-  }
-  const scale=boardScale();grid.style.transform='scale('+scale+')';canvas.style.width=(fixed?width*scale+'px':'100%');canvas.style.height=grid.offsetHeight*scale+'px';$('#zoom-reset').textContent=Math.round(scale*100)+'%';$('#zoom-all').setAttribute('aria-pressed',fixed&&fitBoard);
+ const grid=$('#grid'),board=$('#board-scroll'),canvas=$('#board-canvas');
+ // Header contains only bottom-anchored controls; its empty 74px box is NOT
+ // the board origin. The board starts at the actual top of the viewport.
+ const momentum=document.querySelector('#momentum-slot');
+ const momentumBottom=momentum&&!momentum.hidden?momentum.getBoundingClientRect().bottom:0;
+ board.style.top=Math.max(0,Math.round(momentumBottom))+'px';
+ // End the interactive board above the capture entry, not behind the dock.
+ const capture=document.querySelector('#capture');
+ const captureRect=capture?.getBoundingClientRect();
+ const dockRect=document.querySelector('#bottom-dock')?.getBoundingClientRect();
+ const bottomEdge=(captureRect&&captureRect.height>0?captureRect.top-8:dockRect?.top??window.innerHeight);
+ board.style.bottom=Math.max(0,Math.ceil(window.innerHeight-bottomEdge))+'px';
+ const fixed=layout==='fixed',stack=layout==='smash';
+ $('#board-zoom').hidden=stack;board.dataset.layout=layout;syncBoardControls();
+ $('#zoom-all').hidden=!fixed;$('#columns-label').textContent=fixed?'Visible columns':'Columns';
+ for(const id of ['zoom-out','zoom-in','zoom-reset'])$('#'+id).disabled=stack;
+ if(stack){grid.style.width='100%';grid.style.transform='';canvas.style.width='';canvas.style.height='';$('#zoom-reset').textContent='—';return;}
+ const style=getComputedStyle(board);
+ const usableWidth=Math.max(100,board.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0)-8);
+ const frameGutter=16; // 8px inset on each side, frame fits around sockets
+ const usableHeight=Math.max(100,board.clientHeight-(parseFloat(style.paddingTop)||0)-(parseFloat(style.paddingBottom)||0)-8);
+ const gap=12, pitch=96;
+ grid.style.gridTemplateRows=fixed?'repeat('+matrixRows()+', var(--cell-size))':'';
+ $('#fixed-preview').hidden=!fixed||!drag?.fixedCandidate;
+ if(fixed){
+   grid.style.width=(MATRIX_COLUMNS*pitch-gap)+'px';
+   grid.style.setProperty('--half-columns',MATRIX_COLUMNS);
+   grid.style.setProperty('--cell-size','84px');
+   grid.style.gridTemplateColumns='repeat('+MATRIX_COLUMNS+', 84px)';
+   grid.style.setProperty('--grout-pitch','96px');
+   if(fitBoard){
+     const tiles=visible().filter(i=>i.fixed);
+     if(tiles.length){
+       const minCol=Math.min(...tiles.map(i=>i.fixed.col));
+       const minRow=Math.min(...tiles.map(i=>i.fixed.row));
+       const maxCol=Math.max(...tiles.map(i=>i.fixed.col+visualSize(i).width));
+       const maxRow=Math.max(...tiles.map(i=>i.fixed.row+visualSize(i).height));
+       // Measure the actual viewport, not the 24x48 decorative board or CSS padding-bottom.
+       const bounds=board.getBoundingClientRect();
+       // The board's own bounding box is the unobstructed viewport.
+       const availableHeight=Math.max(80,bounds.height-12);
+       const spanWidth=(maxCol-minCol)*pitch-gap;
+       const spanHeight=(maxRow-minRow)*pitch-gap;
+       const scaleLimit=Math.min(usableWidth/Math.max(1,spanWidth+12),availableHeight/Math.max(1,spanHeight+12));
+       // A visible-column value is a scale control. The smallest value that fits
+       // is the correct result; no full-grid width enters this calculation.
+       fixedVisibleColumns=Math.max(1,Math.ceil((usableWidth-frameGutter)/(pitch*Math.max(.0001,scaleLimit))));
+       const scale=(usableWidth-frameGutter)/(fixedVisibleColumns*pitch);
+       requestAnimationFrame(()=>{
+         board.scrollLeft=Math.max(0,8+minCol*pitch*scale-4);
+         board.scrollTop=Math.max(0,8+minRow*pitch*scale-4);
+       });
+       message('Fit All: '+tiles.length+' tiles, columns '+minCol+'–'+(maxCol-1)+', rows '+minRow+'–'+(maxRow-1)+', window '+Math.round(usableWidth)+'×'+Math.round(availableHeight)+'; '+fixedVisibleColumns+' visible columns.');
+     }
+     fitBoard=false;
+   }
+   fixedZoom=(usableWidth-frameGutter)/(fixedVisibleColumns*pitch);
+ } else {
+   // FLOW has an explicit column count. The drawn grid never sets the limit.
+   const columns=flowColumnCount;
+   const logicalWidth=columns*pitch-gap;
+   grid.style.width=logicalWidth+'px';
+   grid.style.setProperty('--half-columns',columns);
+   grid.style.setProperty('--cell-size','84px');
+   grid.style.gridTemplateColumns='repeat('+ (fixed?'10':String(flowColumnCount)) +', 84px)';
+   grid.style.setProperty('--grout-pitch','96px');
+   flowZoom=usableWidth/(columns*pitch);
+ }
+ const scale=boardScale();
+ canvas.style.setProperty('--socket-inset','8px');
+ canvas.style.setProperty('--visible-grout-pitch',(pitch*scale)+'px');
+ grid.style.transform='scale('+scale+')';
+ canvas.style.width=(fixed?((MATRIX_COLUMNS*pitch-gap)*scale+48)+'px':(grid.offsetWidth*scale+48)+'px');canvas.style.height=(grid.offsetHeight*scale+48)+'px';
+ $('#zoom-reset').textContent=String(fixed?fixedVisibleColumns:flowColumnCount);
+ $('#zoom-reset').title=fixed?'Visible columns':'Flow columns';
+ $('#zoom-out').disabled=(fixed?fixedVisibleColumns:flowColumnCount)<=6;
+ $('#zoom-in').disabled=(fixed?fixedVisibleColumns:flowColumnCount)>=(fixed?24:20);
+ $('#zoom-all').setAttribute('aria-pressed','false');
+ fitTileTitles();
 }
-function setBoardZoom(value){
-  if(layout==='smash')return;cancelCurrentDrag();fitBoard=false;
-  const key=layout==='fixed'?'onto-fixed-zoom':'onto-flow-zoom';
-  const scale=Math.max(.4,Math.min(2,Math.round(value*10)/10));
-  if(layout==='fixed')fixedZoom=scale;else flowZoom=scale;
-  try{localStorage.setItem(key,String(scale));}catch(e){}measureGrid();
+function setBoardColumns(value){
+ if(layout==='smash')return;
+ cancelCurrentDrag();fitBoard=false;
+ const columns=Math.max(6,Math.min(layout==='fixed'?24:20,Math.round(value)));
+ if(layout==='fixed')fixedVisibleColumns=columns;else flowColumnCount=columns;
+ try{localStorage.setItem(layout==='fixed'?'onto-fixed-visible-columns':'onto-flow-columns',String(columns));}catch(e){}
+ measureGrid();
 }
-$('#zoom-all').onclick=()=>{if(layout!=='fixed')return;cancelCurrentDrag();fitBoard=true;measureGrid();$('#board-scroll').scrollLeft=0;$('#board-scroll').scrollTop=0;};
-$('#zoom-out').onclick=()=>setBoardZoom(boardScale()-.1);$('#zoom-in').onclick=()=>setBoardZoom(boardScale()+.1);$('#zoom-reset').onclick=()=>setBoardZoom(1);
+$('#zoom-all').onclick=()=>{if(layout!=='fixed')return;cancelCurrentDrag();const dock=$('#bottom-dock');if(dock&&!dock.classList.contains('dock-collapsed')){const toggle=$('#dock-toggle');if(toggle)toggle.click();}fitBoard=true;requestAnimationFrame(measureGrid);};
+$('#zoom-out').onclick=()=>setBoardColumns((layout==='fixed'?fixedVisibleColumns:flowColumnCount)-1);
+$('#zoom-in').onclick=()=>setBoardColumns((layout==='fixed'?fixedVisibleColumns:flowColumnCount)+1);
+$('#zoom-reset').onclick=()=>setBoardColumns(10);
 for(const [id,mode] of [['view-flow','tiles'],['view-fixed','fixed'],['view-stack','smash']])$('#'+id).onclick=()=>$('#layout').onchange({target:{value:mode}});
 for(const mode of ['user','category','age','status'])$('#color-'+mode).onclick=()=>$('#color-mode').onchange({target:{value:mode}});
 $('#future-toggle').onclick=()=>{switchView('now');showFuture=true;$('#show-future').checked=true;render();};
 function fitTileTitles(){
  const grid=$('#grid');if(grid.dataset.layout==='smash')return;
  grid.querySelectorAll('.tile').forEach(tile=>{
-  const title=tile.querySelector('.tile-title'),status=tile.querySelector('.tile-status'),bottom=tile.querySelector('.tile-bottom'),step=tile.querySelector('.tile-step');
-  if(!title||!bottom)return;
+  const title=tile.querySelector('.tile-title'),footer=tile.querySelector('.tile-bottom'),status=tile.querySelector('.tile-status');
+  if(!title||!footer||!status)return;
   const tier=Math.min(Number(tile.dataset.w)||1,Number(tile.dataset.h)||1);
-  const base=26*(tier>=3?3:tier>=2?2:1),minimum=11;
-  title.style.fontSize=base+'px';
-  const available=Math.max(0,bottom.offsetTop-title.offsetTop-(step?step.offsetHeight+4:0)-4);
-  title.style.maxHeight=available+'px';
-  if(available<8)return;
-  // Temporarily measure the natural text height, then shrink only as necessary.
-  title.style.height='auto';title.style.flexShrink='0';
-  let lo=minimum,hi=base;
-  for(let n=0;n<11;n++){
-   const mid=(lo+hi)/2;title.style.fontSize=mid+'px';
-   if(title.scrollHeight<=available+1)lo=mid;else hi=mid;
+  const base=26*(tier>=3?3:tier>=2?2:1);
+  const style=getComputedStyle(tile);
+  const left=parseFloat(style.paddingLeft)||0,right=parseFloat(style.paddingRight)||0;
+  const width=tile.clientWidth-left-right;
+  // Footer and status are measured in the tile's unscaled local coordinate system.
+  const top=Math.max(status.offsetTop+status.offsetHeight+5,parseFloat(style.paddingTop)||0);
+  const footerHidden=getComputedStyle(footer).display==='none';
+  const footerTop=footerHidden?tile.clientHeight-(parseFloat(style.paddingBottom)||0):footer.offsetTop;
+  const step=tile.querySelector('.tile-step');
+  const bottom=step?Math.min(footerTop,step.offsetTop):footerTop;
+  const available=Math.max(0,bottom-top-6);
+  title.style.setProperty('top',top+'px','important');
+  title.style.setProperty('left',left+'px','important');
+  title.style.setProperty('right',right+'px','important');
+  title.style.setProperty('height',available+'px','important');
+  title.style.setProperty('max-height',available+'px','important');
+  if(width<8||available<8)return;
+  const probe=document.createElement('span');probe.textContent=title.textContent;
+  probe.className='onto-title-measure';
+  probe.style.cssText='position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;display:block;box-sizing:border-box;overflow:visible;white-space:normal;overflow-wrap:anywhere;min-height:0;max-height:none;height:auto;';
+  probe.style.width=width+'px';
+  probe.style.fontFamily=getComputedStyle(title).fontFamily;
+  probe.style.fontWeight=getComputedStyle(title).fontWeight;
+  probe.style.lineHeight='1.12';
+  tile.appendChild(probe);
+  const fits=size=>{probe.style.fontSize=size+'px';return probe.scrollHeight<=available-.5&&probe.scrollWidth<=width+1;};
+  let result=base;
+  if(!fits(base)){
+   let low=4,high=base;
+   if(fits(low)){for(let n=0;n<16;n++){const mid=(low+high)/2;if(fits(mid))low=mid;else high=mid;}}
+   result=low;
   }
-  title.style.fontSize=(lo<base-0.4?lo:base)+'px';
-  title.style.flexShrink='1';
+  probe.remove();title.style.setProperty('font-size',result.toFixed(2)+'px','important');
  });
 }
-function renderGrid(){ensureFixedPositions();const items=visible();pruneBulkSelection(items);$('#grid').dataset.layout=layout;$('#grid').innerHTML=items.map(i=>`${layout==='smash'?`<div class="smash-entry${bulkSelection.has(i.id)?' bulk-selected':''}"><input type="checkbox" class="stage-check" data-select="${esc(i.id)}" ${bulkSelection.has(i.id)?'checked':''} aria-label="Select ${esc(i.title)}">`:''}<button class="tile${layout==='smash'?' smash-row':''}${drag?.active&&drag.id===i.id?' drag-source':''}" data-id="${esc(i.id)}" data-preset="${i.preset?'true':'false'}" data-status="${esc(i.status)}" data-color="${effectiveColor(i)}" data-intensity="${i.intensity||'soft'}" data-w="${visualSize(i).width}" data-h="${visualSize(i).height}" style="${tileGridStyle(i)}" aria-label="${esc(i.title)}. ${esc(i.closed?i.outcome:i.subname)}. ${esc(i.closed?'History':i.status)}. ${esc(i.category||'None')}. ${esc(whenLabel(i))}">${layout==='smash'?'<span class="grip" aria-hidden="true">⠿</span>':''}<span class="tile-status" style="font-size:${Math.min(visualSize(i).width,visualSize(i).height)>=3?30:Math.min(visualSize(i).width,visualSize(i).height)>=2?20:10}pt!important;position:absolute!important;top:8px!important;left:8px!important;right:8px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important">${i.preset?'PRESET':i.closed?historyMark(i)+esc(outcomeLabel(i.kind)):esc(i.status)}</span><span class="tile-title">${esc(i.title)}</span>${i.preset?'<span class="preset-edit-control" data-preset-edit="'+esc(i.id)+'" title="Edit preset tile" aria-label="Edit preset tile">✎</span>':''}${i.closed||i.subname?`<span class="tile-step">${esc(i.closed?i.outcome:i.subname)}</span>`:''}<span class="tile-bottom">${i.preset?'':`<span class="category-tag">${esc(i.category||'None')}</span><span class="tile-when${isFuture(i)?' future':''}">${esc(whenLabel(i))}</span>`}${i.parent||state.items.some(n=>n.parent===i.id)?'<span class="lineage-tag" aria-label="Linked stages" title="Linked stages">ONTO</span>':''}</span></button>${layout==='smash'?'</div>':''}`).join('');fitTileTitles();renderGroupStrip();$('#empty').hidden=items.length>0;const hiddenFuture=view==='now'&&!showFuture?state.items.filter(i=>!i.closed&&isFuture(i)).length:0;$('#brand-stage-count').textContent=items.length+' / '+state.items.length;refreshPlanStatus();$('#empty h2').textContent=hiddenFuture?'Future is tucked away.':"A little room for what's next.";$('#empty p').textContent=hiddenFuture?'Turn on Future to see Someday and scheduled stages after today.':'Capture anything above. Details can wait.';$('#examples').hidden=false;$('#examples').textContent='Add Examples';measureGrid();}
+function renderGrid(){ensureFixedPositions();const items=visible();pruneBulkSelection(items);$('#grid').dataset.layout=layout;$('#grid').innerHTML=items.map(i=>`${layout==='smash'?`<div class="smash-entry${bulkSelection.has(i.id)?' bulk-selected':''}"><input type="checkbox" class="stage-check" data-select="${esc(i.id)}" ${bulkSelection.has(i.id)?'checked':''} aria-label="Select ${esc(i.title)}">`:''}<button class="tile${layout==='smash'?' smash-row':''}${drag?.active&&drag.id===i.id?' drag-source':''}" data-id="${esc(i.id)}" data-preset="${i.preset?'true':'false'}" data-status="${esc(i.status)}" data-color="${effectiveColor(i)}" data-intensity="${i.intensity||'soft'}" data-w="${visualSize(i).width}" data-h="${visualSize(i).height}" style="${tileGridStyle(i)}" aria-label="${esc(i.title)}. ${esc(i.closed?i.outcome:i.subname)}. ${esc(i.closed?'History':i.status)}. ${esc(i.category||'None')}. ${esc(whenLabel(i))}">${layout==='smash'?'<span class="grip" aria-hidden="true">⠿</span>':''}<span class="tile-status" style="font-size:${layout==='smash'?11:Math.min(visualSize(i).width,visualSize(i).height)>=3?30:Math.min(visualSize(i).width,visualSize(i).height)>=2?20:10}pt!important;${layout==='smash'?'position:static!important;':'position:absolute!important;top:8px!important;left:8px!important;right:8px!important;'}line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important">${i.preset?'PRESET':i.closed?historyMark(i)+esc(outcomeLabel(i.kind)):esc(i.status)}</span><span class="tile-title">${esc(i.title)}</span>${i.preset?'<span class="preset-edit-control" data-preset-edit="'+esc(i.id)+'" title="Edit preset tile" aria-label="Edit preset tile">✎</span>':''}${i.closed||i.subname?`<span class="tile-step">${esc(i.closed?i.outcome:i.subname)}</span>`:''}<span class="tile-bottom">${i.preset?'':`<span class="category-tag">${esc(i.category||'None')}</span><span class="tile-when${isFuture(i)?' future':''}">${esc(whenLabel(i))}</span>`}${i.parent||state.items.some(n=>n.parent===i.id)?'<span class="lineage-tag" aria-label="Linked stages" title="Linked stages">↗</span>':''}</span></button>${layout==='smash'?'</div>':''}`).join('');renderGroupStrip();$('#empty').hidden=items.length>0;const hiddenFuture=view==='now'&&!showFuture?state.items.filter(i=>!i.closed&&isFuture(i)).length:0;$('#brand-stage-count').textContent=items.length+' / '+state.items.length;refreshPlanStatus();$('#empty h2').textContent=hiddenFuture?'Future is tucked away.':"A little room for what's next.";$('#empty p').textContent=hiddenFuture?'Turn on Future to see Someday and scheduled stages after today.':'Capture anything above. Details can wait.';$('#examples').hidden=false;$('#examples').textContent='Add Examples';measureGrid();}
 
 let presetEditId=null;function editPresetLabel(i){presetEditId=i.id;$('#preset-edit-name').value=i.title;$('#preset-edit-step').value=i.subname||'';$('#preset-edit-dialog').showModal();}
 $('#preset-edit-form').onsubmit=e=>{e.preventDefault();const i=get(presetEditId);if(!i?.preset)return;const title=$('#preset-edit-name').value.trim();if(!title)return;const before=clone(state);i.title=title;i.subname=$('#preset-edit-step').value.trim();persist();$('#preset-edit-dialog').close();render();message('Preset label updated.',before);};
@@ -276,14 +355,14 @@ $('#category').addEventListener('change',()=>{
  if(!existing){state.attributes.categories.push(name);state.attributes.categories.sort((a,b)=>a.localeCompare(b));}
  refreshEditorCategories(existing||name);syncEditor();
 });
-function openEditor(id,focusField='name'){const i=get(id);if(!i)return;selected=id;editorSize={...sizeOf(i)};editorColor=i.color||'none';editorIntensity=i.intensity||'soft';$('#name').value=i.title;$('#subname').value=i.subname||'';$('#status').innerHTML=statusMarkup()+(i.closed?'':'<option value="__preset__">Preset</option>');$('#status').value=i.preset?'__preset__':i.status;$('#status').disabled=i.closed;renderEditorStatusButtons();$('#when').innerHTML=whenMarkup();$('#when').value=i.when;$('#when-date').value=i.date||'';syncWhenFields($('#when'),$('#when-date'));refreshEditorCategories(i.category);$('#details').value=i.details;$('#stage-label').textContent=i.closed?'HISTORY:':'THIS STAGE:';$('#finish').hidden=i.closed;$('#undone').hidden=!i.closed;$('#onto').textContent=i.closed?'Add next →':'ONTO →';renderOutcomeHistory(i);$('#delete-confirm').hidden=true;$('#delete-tile').hidden=false;$('#first').title=layout==='fixed'?'Move to first free matrix space':'Move to first in this view';$('#last').title=layout==='fixed'?'Move to last free matrix row':'Move to last in this view';$('#up').title=layout==='fixed'?'Move one matrix row up':'Move up in visual order';$('#down').title=layout==='fixed'?'Move one matrix row down':'Move down in visual order';syncEditor();renderLineage(i);if(!$('#editor').open)$('#editor').showModal();const field=focusField==='subname'?$('#subname'):$('#name');field.focus();if(focusField!=='subname')field.select?.();}
+function openEditor(id,focusField='name'){const i=get(id);if(!i)return;selected=id;editorSize={...sizeOf(i)};const sizeWarning=$('#editor-size-warning');if(sizeWarning){sizeWarning.hidden=true;sizeWarning.textContent='';}editorColor=i.color||'none';editorIntensity=i.intensity||'soft';$('#name').value=i.title;$('#subname').value=i.subname||'';$('#status').innerHTML=statusMarkup()+(i.closed?'':'<option value="__preset__">Preset</option>');$('#status').value=i.preset?'__preset__':i.status;$('#status').disabled=i.closed;renderEditorStatusButtons();$('#when').innerHTML=whenMarkup();$('#when').value=i.when;$('#when-date').value=i.date||'';syncWhenFields($('#when'),$('#when-date'));refreshEditorCategories(i.category);$('#details').value=i.details;$('#stage-label').textContent=i.closed?'HISTORY:':'THIS STAGE:';$('#finish').hidden=i.closed;$('#undone').hidden=!i.closed;$('#onto').textContent=i.closed?'Add next →':'ONTO →';renderOutcomeHistory(i);$('#delete-confirm').hidden=true;$('#delete-tile').hidden=false;$('#first').title=layout==='fixed'?'Move to first free matrix space':'Move to first in this view';$('#last').title=layout==='fixed'?'Move to last free matrix row':'Move to last in this view';$('#up').title=layout==='fixed'?'Move one matrix row up':'Move up in visual order';$('#down').title=layout==='fixed'?'Move one matrix row down':'Move down in visual order';syncEditor();renderLineage(i);if(!$('#editor').open)$('#editor').showModal();const field=focusField==='subname'?$('#subname'):$('#name');field.focus();if(focusField!=='subname')field.select?.();}
 function rootOf(i){while(i.parent&&get(i.parent))i=get(i.parent);return i;}
 function renderLineage(i){const root=rootOf(i),nodes=state.items.filter(n=>rootOf(n).id===root.id);$('#chain-count').textContent=nodes.length+' '+(nodes.length===1?'stage':'stages');let html='';function walk(n,depth){html+=`<button type="button" class="lineage-node${n.id===i.id?' current':''}" style="--indent:${Math.min(depth,5)}" data-lineage="${esc(n.id)}"><strong>${n.closed?historyMark(n):''}${esc(n.title)}</strong>${n.closed||n.subname?`<span class="lineage-step">${esc(n.closed?n.outcome:n.subname)}</span>`:''}<small>${esc(n.category||'None')} · ${esc(whenLabel(n))} · ${esc(n.closed?outcomeLabel(n.kind):n.status)}${n.closed&&n.subname?'<br>Step: '+esc(n.subname):''}${n.closures?.length?'<br>Reopened · '+n.closures.length+' previous '+(n.closures.length===1?'outcome':'outcomes'):''}</small></button>`;state.items.filter(c=>c.parent===n.id).forEach(c=>walk(c,depth+1));}walk(root,0);$('#lineage').innerHTML=html;$$('[data-lineage]').forEach(b=>b.onclick=()=>openEditor(b.dataset.lineage));}
 function editValues(){return {title:$('#name').value.trim(),subname:$('#subname').value.trim(),status:$('#status').value,category:$('#category').value.trim(),details:$('#details').value,size:{...editorSize},color:editorColor,intensity:editorIntensity,...whenFields($('#when'),$('#when-date'))};}
 function editorChanged(){const i=get(selected);if(!i)return false;return Object.entries(editValues()).some(([key,value])=>{if(i.preset&&key==='status')return false;return JSON.stringify(value)!==JSON.stringify(i[key]??'');});}
 function syncEditor(){const i=get(selected);if(!i)return;const presetMode=$('#status').value==='__preset__';renderEditorStatusButtons();$('#editor').classList.toggle('editing-preset',presetMode);syncWhenFields($('#when'),$('#when-date'));$('#update').disabled=!editorChanged();const preview=$('#editor-tile');preview.dataset.color=effectiveColor({...i,...editValues()});preview.dataset.status=$('#status').value;preview.dataset.intensity=editorIntensity;renderEditorSize();renderEditorColors();}
 function renderEditorSize(){const sizes=[1,2,4],cols=sizes.indexOf(editorSize.width)+1,rows=sizes.indexOf(editorSize.height)+1;$('#editor-size-grid').innerHTML=sizes.flatMap((height,row)=>sizes.map((width,col)=>`<button type="button" data-editor-size="${width}:${height}" class="${col<cols&&row<rows?'filled ':''}${width===editorSize.width&&height===editorSize.height?'chosen':''}" aria-pressed="${width===editorSize.width&&height===editorSize.height}" aria-label="${esc(sizeLabel({size:{width,height}}))}" title="${esc(sizeLabel({size:{width,height}}))}"></button>`)).join('');$('#editor-size-label').textContent=sizeLabel({size:editorSize});}
-function chooseEditorSize(key){const [width,height]=key.split(':').map(Number);if(![1,2,4].includes(width)||![1,2,4].includes(height))return;editorSize={width,height};syncEditor();}
+function chooseEditorSize(key){const [width,height]=key.split(':').map(Number);if(![1,2,4].includes(width)||![1,2,4].includes(height))return;editorSize={width,height};syncEditor();const item=get(selected);const reason=layout==='fixed'&&item?.fixed?sizePlacementReason(item,item.fixed,editorSize):'';const note=$('#editor-size-warning');if(note){note.textContent=reason;note.hidden=!reason;}}
 $('#editor-size-grid').addEventListener('click',e=>{const button=e.target.closest('[data-editor-size]');if(button){chooseEditorSize(button.dataset.editorSize);$(`[data-editor-size="${button.dataset.editorSize}"]`)?.focus();}});
 function intensityDots(color,current,mode){return '<span class="intensity-divider" aria-hidden="true"></span>'+['soft','hot','hotter'].map(level=>`<button type="button" class="intensity-dot" data-${mode==='editor'?'editor-intensity':'attribute'}="${mode==='editor'?level:'intensity:'+level}" data-swatch="${color}" data-level="${level}" aria-label="${level} intensity" title="${level[0].toUpperCase()+level.slice(1)}" aria-pressed="${current===level}"><span class="intensity-swatch"></span></button>`).join('');}
 function renderEditorColors(){const automatic=state.colorMode!=='user';$('#editor-color-chips').innerHTML=tileColors.map(color=>`<button type="button" data-editor-color="${color}" data-swatch="${color}" aria-label="${colorNames[color]}" title="${colorNames[color]}" aria-pressed="${color===editorColor}" ${automatic?'disabled':''}><span class="color-swatch"></span></button>`).join('')+intensityDots(editorColor,editorIntensity,'editor');$('#editor-color-note').textContent=automatic?'By '+state.colorMode:'';}
@@ -292,7 +371,7 @@ $('#editor-color-chips').addEventListener('click',e=>{const b=e.target.closest('
 function chooseEditorColor(color){if(state.colorMode!=='user'||!tileColors.includes(color))return;editorColor=color;syncEditor();}
 $('#editor-color-chips').addEventListener('click',e=>{const button=e.target.closest('[data-editor-color]');if(button){chooseEditorColor(button.dataset.editorColor);$(`[data-editor-color="${button.dataset.editorColor}"]`)?.focus();}});
 $('#editform').addEventListener('input',syncEditor);$('#editform').addEventListener('change',syncEditor);
-function saveEditor(){const values=editValues();const item=get(selected);const makePreset=$('#status').value==='__preset__';if(makePreset){values.status=item.status;values.category='';values.when=state.attributes.defaultWhen;values.date='';values.details='';}else if(item.preset){values.status=state.attributes.defaultStatus;delete item.preset;}if(makePreset&&!item.preset)item.preset=displaySnapshot();if(layout==='fixed'&&get(selected).fixed&&!canPlaceFixed(get(selected),get(selected).fixed,values.size)){message('This size overlaps another tile. Move the tile into more space first.');return false;}if(!validWhenFields(values)){$('#when-date').reportValidity();return false;}if(!values.title){$('#name').reportValidity();return false;}Object.assign(get(selected),values);persist();render();return true;}
+function saveEditor(){const values=editValues();const item=get(selected);const makePreset=$('#status').value==='__preset__';if(makePreset){values.status=item.status;values.category='';values.when=state.attributes.defaultWhen;values.date='';values.details='';}else if(item.preset){values.status=state.attributes.defaultStatus;delete item.preset;}if(makePreset&&!item.preset)item.preset=displaySnapshot();if(layout==='fixed'&&item.fixed&&!canPlaceFixed(item,item.fixed,values.size)){const note=$('#editor-size-warning');if(note){note.textContent=sizePlacementReason(item,item.fixed,values.size)+' Move the tile to a clear location before resizing.';note.hidden=false;note.scrollIntoView({block:'nearest'});}return false;}if(!validWhenFields(values)){$('#when-date').reportValidity();return false;}if(!values.title){$('#name').reportValidity();return false;}Object.assign(get(selected),values);persist();render();return true;}
 $('#editform').onsubmit=e=>{e.preventDefault();if(!editorChanged())return;const before=clone(state);if(saveEditor()){$('#editor').close();message('Stage updated.',before);}};
 function deleteScopeIds(id,scope='stage'){const i=get(id);if(!i)return [];if(scope==='chain'){const root=rootOf(i);return state.items.filter(n=>rootOf(n).id===root.id).map(n=>n.id);}if(scope==='future'){const ids=new Set([id]);let changed=true;while(changed){changed=false;for(const n of state.items)if(n.parent&&ids.has(n.parent)&&!ids.has(n.id)){ids.add(n.id);changed=true;}}return [...ids];}return [id];}
 function removeStages(ids){const removed=new Set(ids.filter(id=>get(id)));for(const i of state.items){if(removed.has(i.id))continue;while(i.parent&&removed.has(i.parent))i.parent=get(i.parent).parent;}state.items=state.items.filter(n=>!removed.has(n.id));state.order=state.order.filter(id=>!removed.has(id));for(const m of state.moments){if(removed.has(m.stageId))m.stageId=null;m.nextIds=m.nextIds.filter(id=>!removed.has(id));}return removed.size;}
@@ -322,7 +401,7 @@ function clearHover(){if(drag){clearTimeout(drag.hoverTimer);clearTimeout(drag.m
 function hoverTrayControl(hit){const mode=hit?.closest('[data-tray]');if(mode){if(mode.disabled){clearHover();return true;}if(drag.modeKey!==mode.dataset.tray){clearHover();drag.modeKey=mode.dataset.tray;if(trayMode!==mode.dataset.tray){mode.classList.add('mode-hover');drag.modeTimer=setTimeout(()=>{if(drag?.active&&drag.modeKey===mode.dataset.tray)switchTrayMode(mode.dataset.tray);},350);}}return true;}const deleteButton=hit?.closest('#tray-delete');if(deleteButton&&!deleteButton.hidden){clearHover();deleteButton.classList.add('hover');return true;}const neverMind=hit?.closest('#never-mind');if(neverMind){clearHover();neverMind.classList.add('hover');return true;}return false;}
 function cancelCurrentDrag(){if(drag?.active)endDrag({pointerId:drag.pointer,clientX:drag.x,clientY:drag.y},true);}
 $('#never-mind').onclick=cancelCurrentDrag;$('#tray-delete').onclick=()=>{if(!drag?.active)return;deleteDragGroup();if(drag?.groupDeleted)finishDeletedDrag();};
-function finishDeletedDrag(){const d=drag;if(!d)return;clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost?.remove();d.crosshair?.remove();$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;render();}
+function finishDeletedDrag(){document.querySelectorAll('#grid .flow-drop-target').forEach(t=>t.classList.remove('flow-drop-target'));const d=drag;if(!d)return;clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost?.remove();d.crosshair?.remove();$('#tray').classList.remove('tray-yielded');$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;render();}
 function updateTrayConfirmation(){if(!drag?.active)return;const i=get(drag.id);$('#tray-confirmation').textContent=(i.closed?'History':i.status)+' · '+(i.category||'None')+' · '+(drag.pendingDate?'Pick date on release':whenLabel(i))+(trayMode==='size'?' · '+sizeLabel(i):trayMode==='color'?' · '+colorNames[i.color||'none']:'');$$('#attributes [data-attribute]').forEach(b=>{const selected=b.dataset.attribute===(trayMode==='color'&&b.dataset.attribute.startsWith('intensity:')?'intensity:'+(i.intensity||'soft'):trayMode==='size'?sizeKey(i):trayMode==='when'?(drag.pendingDate?'__pickdate__':i.when==='__date__'?(i.date===dateAfter()?'__today__':i.date===dateAfter(1)?'__tomorrow__':''):i.when):i[trayMode]);b.classList.toggle('applied',selected);b.setAttribute('aria-pressed',selected);});}
 function enterDrawer(hit){const inside=!!hit?.closest('#tray');if(inside&&layout==='fixed')clearFixedPreview();if(inside&&!drag.inDrawer){drag.inDrawer=true;state.order=drag.before.order.slice();renderGrid();}else if(!inside)drag.inDrawer=false;return inside;}
 function applyAttribute(button){
@@ -347,7 +426,14 @@ function applyAttribute(button){
  }else if(trayMode==='size'){
   const [width,height]=value.split(':').map(Number);
   if(![1,2,4].includes(width)||![1,2,4].includes(height))return;
-  if(targets.some(item=>layout==='fixed'&&item.fixed&&!canPlaceFixed(item,item.fixed,{width,height}))){$('#tray-confirmation').textContent='This size needs more empty space at the original position.';return;}
+  const blocked=targets.map(item=>layout==='fixed'&&item.fixed?{item,blocker:fixedBlocker(item,item.fixed,{width,height}),outside:!validFixed(item.fixed,{width,height})}:null).find(result=>result&&(result.blocker||result.outside));
+  if(blocked){
+   const reason=sizePlacementReason(blocked.item,blocked.item.fixed,{width,height});
+   $('#tray-confirmation').textContent=reason+' — move this tile into a clear area before resizing.';
+   button.classList.add('size-blocked');
+   setTimeout(()=>button.classList.remove('size-blocked'),900);
+   return;
+  }
   targets.forEach(item=>{if(sizeKey(item)!==value){item.size={width,height};changed=true;}});
   $('#attributes').style.setProperty('--selected-cols',String([1,2,4].indexOf(width)+1));
   $('#attributes').style.setProperty('--selected-rows',String([1,2,4].indexOf(height)+1));
@@ -371,16 +457,47 @@ function applyAttribute(button){
 function syncGhostSize(i){if(layout==='smash')return;if(!drag?.ghost?.style||!$('#grid').clientWidth)return;const sz=sizeOf(i),unit=parseFloat($('#grid').style.getPropertyValue('--cell-size'));if(!unit)return;const scale=boardScale(),width=(unit*sz.width+12*(sz.width-1))*scale,height=(unit*sz.height+12*(sz.height-1))*scale;drag.ghost.style.width=width+'px';drag.ghost.style.height=height+'px';drag.ghost.dataset.w=sz.width;drag.ghost.dataset.h=sz.height;drag.offsetX=Math.min(drag.offsetX,width);drag.offsetY=Math.min(drag.offsetY,height);positionGhost();}
 function dragTarget(){if(!drag)return {x:0,y:0};const r=drag.ghost?.getBoundingClientRect();const viewport=window.visualViewport;const maxX=(viewport?.width||innerWidth)-12,maxY=(viewport?.height||innerHeight)-12;return {x:Math.max(12,Math.min(maxX,(r?.left??drag.x)+(r?.width??0)/2)),y:Math.max(12,Math.min(maxY,(r?.top??drag.y)+16))};}
 function boardTarget(){return drag?{x:drag.x,y:drag.y}:{x:0,y:0};}
-function dragHit(){const cross=dragTarget(),hover=document.elementFromPoint(cross.x,cross.y);if(hover?.closest('#tray'))return {point:cross,hit:hover};const point=boardTarget();return {point,hit:document.elementFromPoint(point.x,point.y)};}
+function dragHit(){const cross=dragTarget(),hover=document.elementFromPoint(cross.x,cross.y);if(!drag.trayYielded&&hover?.closest('#tray'))return {point:cross,hit:hover};const point=boardTarget();return {point,hit:document.elementFromPoint(point.x,point.y)};}
 function groupDrag(){return !!(drag&&layout==='smash'&&drag.groupIds?.length>1);}
 function deleteDragGroup(){if(!groupDrag())return;const ids=(drag.groupIds||[]).filter(id=>get(id));if(!ids.length)return;const before=drag.before;removeStages(ids);bulkSelection.clear();drag.changed=false;drag.groupDeleted=true;persist();message(ids.length+' '+(ids.length===1?'tile':'tiles')+' deleted.',before);}
-function beginDrag(){if(!drag||drag.active)return;clearTimeout(drag.timer);drag.groupIds=layout==='smash'&&bulkSelection.size>1&&bulkSelection.has(drag.id)?[...bulkSelection].filter(id=>get(id)):[];drag.active=true;drag.before=clone(state);const tile=$(`[data-id="${drag.id}"]`),r=tile.getBoundingClientRect();drag.offsetX=drag.x-r.left;drag.offsetY=drag.y-r.top;drag.ghost=tile.cloneNode(true);drag.ghost.removeAttribute('data-id');drag.ghost.removeAttribute('aria-label');drag.ghost.classList.add('ghost');drag.ghost.style.width=r.width+'px';drag.ghost.style.height=r.height+'px';document.body.append(drag.ghost);{drag.crosshair=document.createElement('div');drag.crosshair.className='drag-crosshair';drag.crosshair.setAttribute('aria-hidden','true');drag.crosshair.textContent='+';document.body.append(drag.crosshair);}tile.classList.add('drag-source');document.body.classList.add('dragging');$('#toast').hidden=true;if(layout==='fixed'&&fitBoard){fitBoard=false;}trayMode='status';renderTray();$('#tray').hidden=!!get(drag.id)?.preset;$('#tray-title').textContent=groupDrag()?'GROUP THERAPY · '+drag.groupIds.length+' SELECTED':'Give it an attribute';$('#tray-delete').hidden=false;$('#tray').classList.toggle('group-therapy',groupDrag());positionGhost();drag.scrollFrame=requestAnimationFrame(autoScroll);}
+function beginDrag(){if(!drag||drag.active)return;clearTimeout(drag.timer);drag.groupIds=layout==='smash'&&bulkSelection.size>1&&bulkSelection.has(drag.id)?[...bulkSelection].filter(id=>get(id)):[];drag.active=true;drag.before=clone(state);const tile=$(`[data-id="${drag.id}"]`),r=tile.getBoundingClientRect();drag.offsetX=drag.x-r.left;drag.offsetY=drag.y-r.top;drag.ghost=tile.cloneNode(true);drag.ghost.removeAttribute('data-id');drag.ghost.removeAttribute('aria-label');drag.ghost.classList.add('ghost');drag.ghost.style.width=r.width+'px';drag.ghost.style.height=r.height+'px';document.body.append(drag.ghost);{drag.crosshair=document.createElement('div');drag.crosshair.className='drag-crosshair';drag.crosshair.setAttribute('aria-hidden','true');drag.crosshair.textContent='+';document.body.append(drag.crosshair);}tile.classList.add('drag-source');document.body.classList.add('dragging');$('#toast').hidden=true;if(layout==='fixed'&&fitBoard){fitBoard=false;}trayMode='status';renderTray();$('#tray').hidden=!!get(drag.id)?.preset;$('#tray-title').textContent=groupDrag()?'GROUP THERAPY · '+drag.groupIds.length+' SELECTED':'';$('#tray-delete').hidden=false;$('#tray').classList.toggle('group-therapy',groupDrag());positionGhost();drag.extraRows=matrixRows();drag.scrollFrame=requestAnimationFrame(autoScroll);}
 function positionGhost(){if(drag?.ghost){drag.ghost.style.left=(drag.x-drag.offsetX)+'px';drag.ghost.style.top=(drag.y-drag.offsetY)+'px';if(drag.crosshair){const point=dragTarget();drag.crosshair.style.left=point.x+'px';drag.crosshair.style.top=point.y+'px';}}}
 function scrollBoard(delta,horizontal=0){$('#board-scroll').scrollBy?.(horizontal,delta);}
-function autoScroll(){if(!drag?.active)return;const board=$('#board-scroll').getBoundingClientRect(),dock=$('#bottom-dock').getBoundingClientRect(),tray=$('#tray').getBoundingClientRect(),overDock=drag.x>=dock.left&&drag.x<=dock.right,overTray=drag.x>=tray.left&&drag.x<=tray.right,bottom=Math.min(board.bottom,overDock?dock.top:board.bottom,overTray?tray.top:board.bottom),delta=drag.y<board.top+45&&drag.y>=board.top?-10:drag.y>bottom-45&&drag.y<bottom?10:0;const horizontal=layout==='fixed'&&drag.y<bottom?(drag.x<board.left+35?-10:drag.x>board.right-35?10:0):0;if(delta||horizontal){scrollBoard(delta,horizontal);if(layout==='fixed'&&!drag.inDrawer)previewFixed(drag.x,drag.y);}drag.scrollFrame=requestAnimationFrame(autoScroll);}
+function autoScroll(){
+ if(!drag?.active)return;
+ const scroller=$('#board-scroll'),board=scroller.getBoundingClientRect(),dock=$('#bottom-dock').getBoundingClientRect();
+ const tray=$('#tray'),trayRect=tray.getBoundingClientRect(),cross=dragTarget();
+ // Move the hoverboard out of the way only when the tile's top-center crosshair
+ // reaches its top edge. Restore it once the tile moves away.
+ if(!tray.hidden&&!drag.trayYielded&&cross.y<=trayRect.top+24&&cross.x>=trayRect.left&&cross.x<=trayRect.right){
+  drag.trayYielded=true;tray.classList.add('tray-yielded');clearHover();
+ }else if(drag.trayYielded&&cross.y>trayRect.bottom+36){
+  drag.trayYielded=false;tray.classList.remove('tray-yielded');
+ }
+ // The dock occupies only the right side on desktop. Do not treat its top
+ // as the bottom edge of the entire backsplash.
+ const pointerOverDockX=drag.x>=dock.left&&drag.x<=dock.right;
+ const visibleBottom=pointerOverDockX?Math.min(board.bottom,dock.top):board.bottom;
+ const bottom=Math.min(visibleBottom,window.innerHeight);
+ const top=board.top;
+ const threshold=40;
+ const pointerInsideBoardX=drag.x>=board.left+8&&drag.x<=board.right-8;
+ const down=pointerInsideBoardX&&drag.y>bottom-threshold&&drag.y<=bottom;
+ const up=pointerInsideBoardX&&drag.y<top+threshold&&drag.y>=top;
+ const delta=down?Math.min(22,Math.max(3,(drag.y-(bottom-threshold))*.35)):up?-Math.min(22,Math.max(3,((top+threshold)-drag.y)*.35)):0;
+ const horizontal=layout==='fixed'&&drag.y<bottom?(drag.x<board.left+35?-10:drag.x>board.right-35?10:0):0;
+ if(delta>0&&layout==='fixed'&&scroller.scrollTop+scroller.clientHeight>=scroller.scrollHeight-40&&(!drag.lastExtendAt||performance.now()-drag.lastExtendAt>450)){
+  drag.lastExtendAt=performance.now();
+  // Extend the fixed matrix while dragging so new space can actually be reached.
+  drag.extraRows=Math.max(drag.extraRows||0,matrixRows())+2;
+  measureGrid();
+ }
+ if(delta||horizontal){scrollBoard(delta,horizontal);if(layout==='fixed'&&!drag.inDrawer)previewFixed(drag.x,drag.y);}
+ drag.scrollFrame=requestAnimationFrame(autoScroll);
+}
 $('#grid').addEventListener('pointerdown',e=>{if(drag||e.button!==0||e.target.closest('[data-select], [data-preset-edit]'))return;const tile=e.target.closest('.tile');if(!tile)return;drag={id:tile.dataset.id,pointer:e.pointerId,type:e.pointerType,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastY:e.clientY,lastX:e.clientX,active:false,moved:false,changed:false};drag.timer=setTimeout(beginDrag,320);});
-document.addEventListener('pointermove',e=>{if(!drag||drag.pointer!==e.pointerId)return;drag.x=e.clientX;drag.y=e.clientY;const distance=Math.hypot(drag.x-drag.startX,drag.y-drag.startY);if(!drag.active){if(distance>8){if(drag.type==='mouse')beginDrag();else{clearTimeout(drag.timer);drag.moved=true;scrollBoard(drag.lastY-drag.y,layout==='fixed'?drag.lastX-drag.x:0);}}drag.lastY=drag.y;drag.lastX=drag.x;return;}e.preventDefault();positionGhost();const {point,hit}=dragHit(),inDrawer=enterDrawer(hit);if(hoverTrayControl(hit))return;const attr=hit?.closest('[data-attribute]');if(attr){const key=trayMode+':'+attr.dataset.attribute;if(drag.hoverKey!==key){clearHover();drag.hoverKey=key;attr.classList.add('hover');if(trayMode==='size'){drag.pendingSize=attr.dataset.attribute;drag.hoverTimer=setTimeout(()=>{if(drag?.active&&drag.hoverKey===key){applyAttribute(attr);}},1000);}else{drag.pendingSize=null;drag.hoverTimer=setTimeout(()=>applyAttribute(attr),650);}}return;}clearHover();drag.pendingSize=null;if(inDrawer||groupDrag())return;if(layout==='fixed'){previewFixed(drag.x,drag.y);return;}const target=hit?.closest('.tile');if(!target||target.dataset.id===drag.id)return;const r=target.getBoundingClientRect();const after=layout==='smash'?point.y>r.top+r.height/2:point.y>r.top+r.height*.7||(point.y>=r.top+r.height*.3&&point.x>r.left+r.width/2);const old=state.order.indexOf(drag.id);state.order.splice(old,1);const idx=state.order.indexOf(target.dataset.id);state.order.splice(idx+(after?1:0),0,drag.id);if(state.order.indexOf(drag.id)!==old){drag.changed=true;renderGrid();}}, {passive:false});
-function endDrag(e,cancel=false){if(!drag||e.pointerId!==drag.pointer)return;clearTimeout(drag.timer);const d=drag;if(d.active){const {point,hit}=dragHit();if(hit?.closest('#tray-delete')){if(groupDrag()){deleteDragGroup();}else{removeStages([d.id]);d.groupDeleted=true;persist();message('Tile deleted.',d.before);}if(d.groupDeleted){finishDeletedDrag();return;}cancel=true;}cancel=cancel||!!hit?.closest('#never-mind');const attr=hit?.closest('[data-attribute]'),inDrawer=!!hit?.closest('#tray');if(!cancel){if(attr)applyAttribute(attr);if(inDrawer||attr)state.order=d.before.order.slice();else if(layout==='fixed'){const candidate=fixedCandidateAt(d.x,d.y);d.fixedRejected=!!candidate&&!candidate.valid;if(candidate?.valid){const i=get(d.id);if(i.fixed.col!==candidate.col||i.fixed.row!==candidate.row){placeFixed(i,candidate);d.changed=true;}}}}clearFixedPreview();clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost.remove();d.crosshair?.remove();$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;if(cancel){state=d.before;render();message('Never mind. Tile restored.');}else{persist();render();if(d.changed)message(inDrawer||attr?'Choices saved. Tile returned to its original position.':'Position and attributes saved.',d.before);if(d.fixedRejected)message('Occupied space. Tile kept its original position.',d.changed?d.before:null);if(d.pendingDate)startDateEdit(d.id,d.before);}}else{drag=null;if(!cancel&&!d.moved){const tile=get(d.id);if(tile?.preset)recallPreset(tile);else openEditor(d.id);}}}
+document.addEventListener('pointermove',e=>{if(!drag||drag.pointer!==e.pointerId)return;drag.x=e.clientX;drag.y=e.clientY;const distance=Math.hypot(drag.x-drag.startX,drag.y-drag.startY);if(!drag.active){if(distance>8){if(drag.type==='mouse')beginDrag();else{clearTimeout(drag.timer);drag.moved=true;scrollBoard(drag.lastY-drag.y,layout==='fixed'?drag.lastX-drag.x:0);}}drag.lastY=drag.y;drag.lastX=drag.x;return;}e.preventDefault();positionGhost();const {point,hit}=dragHit(),inDrawer=enterDrawer(hit);if(hoverTrayControl(hit))return;const attr=hit?.closest('[data-attribute]');if(attr){const key=trayMode+':'+attr.dataset.attribute;if(drag.hoverKey!==key){clearHover();drag.hoverKey=key;attr.classList.add('hover');if(trayMode==='size'){drag.pendingSize=attr.dataset.attribute;drag.hoverTimer=setTimeout(()=>{if(drag?.active&&drag.hoverKey===key){applyAttribute(attr);}},1000);}else{drag.pendingSize=null;drag.hoverTimer=setTimeout(()=>applyAttribute(attr),650);}}return;}clearHover();drag.pendingSize=null;if(inDrawer||groupDrag())return;if(layout==='fixed'){previewFixed(drag.x,drag.y);return;}const target=hit?.closest('.tile');document.querySelectorAll('#grid .flow-drop-target').forEach(t=>{if(t!==target)t.classList.remove('flow-drop-target');});if(!target||target.dataset.id===drag.id)return;target.classList.add('flow-drop-target');const r=target.getBoundingClientRect();const after=layout==='smash'?point.y>r.top+r.height/2:point.y>r.top+r.height*.7||(point.y>=r.top+r.height*.3&&point.x>r.left+r.width/2);const old=state.order.indexOf(drag.id);state.order.splice(old,1);const idx=state.order.indexOf(target.dataset.id);state.order.splice(idx+(after?1:0),0,drag.id);if(state.order.indexOf(drag.id)!==old){drag.changed=true;renderGrid();}}, {passive:false});
+function endDrag(e,cancel=false){document.querySelectorAll('#grid .flow-drop-target').forEach(t=>t.classList.remove('flow-drop-target'));if(!drag||e.pointerId!==drag.pointer)return;clearTimeout(drag.timer);const d=drag;if(d.active){const {point,hit}=dragHit();if(hit?.closest('#tray-delete')){if(groupDrag()){deleteDragGroup();}else{removeStages([d.id]);d.groupDeleted=true;persist();message('Tile deleted.',d.before);}if(d.groupDeleted){finishDeletedDrag();return;}cancel=true;}cancel=cancel||!!hit?.closest('#never-mind');const attr=hit?.closest('[data-attribute]'),inDrawer=!!hit?.closest('#tray');if(!cancel){if(attr)applyAttribute(attr);if(inDrawer||attr)state.order=d.before.order.slice();else if(layout==='fixed'){const candidate=fixedCandidateAt(d.x,d.y);d.fixedRejected=!!candidate&&!candidate.valid;if(candidate?.valid){const i=get(d.id);if(i.fixed.col!==candidate.col||i.fixed.row!==candidate.row){placeFixed(i,candidate);d.changed=true;}}}}clearFixedPreview();clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost.remove();d.crosshair?.remove();$('#tray').classList.remove('tray-yielded');$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;if(cancel){state=d.before;render();message('Never mind. Tile restored.');}else{persist();render();if(d.changed)message(inDrawer||attr?'Choices saved. Tile returned to its original position.':'Position and attributes saved.',d.before);if(d.fixedRejected)message('Occupied space. Tile kept its original position.',d.changed?d.before:null);if(d.pendingDate)startDateEdit(d.id,d.before);}}else{drag=null;if(!cancel&&!d.moved){const tile=get(d.id);if(tile?.preset)recallPreset(tile);else openEditor(d.id);}}}
 document.addEventListener('pointerup',e=>endDrag(e));document.addEventListener('pointercancel',e=>endDrag(e,true));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag)endDrag({pointerId:drag.pointer,clientX:drag.x,clientY:drag.y},true);});
 $('#attributes').addEventListener('click',e=>{const button=e.target.closest('[data-attribute]');if(button)applyAttribute(button);});
 $('#grid').addEventListener('click',e=>{const edit=e.target.closest('[data-preset-edit]');if(edit){e.preventDefault();e.stopPropagation();const i=get(edit.dataset.presetEdit);if(i?.preset)openEditor(i.id);return;}if(e.detail===0){const tile=e.target.closest('.tile');if(tile){const i=get(tile.dataset.id);if(i?.preset)recallPreset(i);else openEditor(tile.dataset.id);}}});$('#grid').addEventListener('contextmenu',e=>{const tile=e.target.closest('.tile');if(tile){e.preventDefault();const i=get(tile.dataset.id);if(i?.preset)openEditor(i.id);}});
@@ -424,10 +541,11 @@ $('#manageform').onsubmit=e=>{e.preventDefault();collectManage();const error=dra
 function pruneBulkSelection(items){const ids=new Set(items.map(i=>i.id));for(const id of bulkSelection)if(layout!=='smash'||!ids.has(id))bulkSelection.delete(id);}
 function renderGroupStrip(){/* Selection is shown by checked boxes and the GROUP THERAPY hoverboard. */}
 $('#grid').addEventListener('change',e=>{if(!e.target.matches?.('[data-select]'))return;const id=e.target.dataset.select;if(e.target.checked)bulkSelection.add(id);else bulkSelection.delete(id);renderGrid();$(`[data-select="${id}"]`)?.focus();});
-normalize();render();measureGrid();if(typeof ResizeObserver!=='undefined'){new ResizeObserver(measureGrid).observe($('#board-scroll'));}if(loadError)message('Could not read saved data. Import an export to recover it.');
+normalize();render();measureGrid();requestAnimationFrame(()=>{const b=$('#board-scroll');if(b&&!fitBoard){b.scrollTop=0;b.scrollLeft=0;}});if(typeof ResizeObserver!=='undefined'){new ResizeObserver(measureGrid).observe($('#board-scroll'));}if(loadError)message('Could not read saved data. Import an export to recover it.');
 
-function measureDock(){const dock=$('#bottom-dock');if(!dock.getBoundingClientRect||!document.documentElement?.style)return;document.documentElement.style.setProperty('--dock-height',dock.getBoundingClientRect().height+'px');if(layout==='fixed'&&fitBoard)measureGrid();}
+function measureDock(){const dock=$('#bottom-dock');if(!dock.getBoundingClientRect||!document.documentElement?.style)return;document.documentElement.style.setProperty('--dock-height',dock.getBoundingClientRect().height+'px');if(fitBoard)measureGrid();}
 measureDock();if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureDock).observe($('#bottom-dock'));
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>requestAnimationFrame(measureGrid)).observe($('#capture'));
 
 window.addEventListener?.('resize',measureGrid);
 
