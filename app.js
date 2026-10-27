@@ -36,7 +36,7 @@ let supporterPreview=false;
 try{supporterPreview=localStorage.getItem(SUPPORTER_PREVIEW_KEY)==='yes';}catch(_){}
 function remainingFreeTiles(){return Math.max(0,FREE_TILE_LIMIT-state.items.length);}
 function canAddTiles(count=1){return supporterPreview||state.items.length+count<=FREE_TILE_LIMIT;}
-function tileLimitNotice(){message('Free ONTO includes 6 tiles (including History). Supporter unlock is coming. Existing tiles and backups are safe.');}
+function tileLimitNotice(){message('6-tile limit reached. History tiles count.');}
 function refreshPlanStatus(){
  const el=$('#plan-status');if(!el)return;
  el.textContent=supporterPreview?'Supporter preview · Unlimited tiles (test only)':`Free · ${state.items.length}/${FREE_TILE_LIMIT} tiles${state.items.length>FREE_TILE_LIMIT?' · Existing board preserved':''}`;
@@ -161,11 +161,11 @@ function syncBoardControls(){
 }
 function measureGrid(){
  const grid=$('#grid'),board=$('#board-scroll'),canvas=$('#board-canvas');
- // Header contains only bottom-anchored controls; its empty 74px box is NOT
- // the board origin. The board starts at the actual top of the viewport.
+ // Respect the device safe area; Momentum's measured bottom already includes it.
+ const safeTop=parseFloat(getComputedStyle($('.site-header')).paddingTop)||0;
  const momentum=document.querySelector('#momentum-slot');
  const momentumBottom=momentum&&!momentum.hidden?momentum.getBoundingClientRect().bottom:0;
- board.style.top=Math.max(0,Math.round(momentumBottom))+'px';
+ board.style.top=Math.ceil(Math.max(safeTop,momentumBottom))+'px';
  // End the interactive board above the capture entry, not behind the dock.
  const capture=document.querySelector('#capture');
  const captureRect=capture?.getBoundingClientRect();
@@ -308,10 +308,15 @@ function captureThought(edit=false){const title=$('#thought').value.trim();if(!t
   // grid can leave WebKit at its input-focus magnification until rotation.
   // End the editing session before any DOM/grid measurements.
   if(document.activeElement===$('#thought'))$('#thought').blur();const before=clone(state),i=stage(title);state.items.push(i);state.order.unshift(i.id);returnToNow();categoryFilter='';statusFilter='';whenFilter='';persist();render();$('#thought').value='';message(!showFuture&&isFuture(i)?'Captured for '+whenLabel(i)+'. Turn on Future to see it.':'Captured. Details can wait.',before);if(edit)openEditor(i.id,'subname');return i.id;}
-function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(const id of ['capture-add','capture-edit'])$('#'+id).disabled=!hasText;for(const id of ['capture-done','capture-clear'])$('#'+id).hidden=!hasText;}
+function updateCaptureActions(){
+ const value=$('#thought').value,hasTitle=!!value.trim();
+ $('#capture-actions').hidden=!hasTitle||!$('#bottom-dock').classList.contains('dock-collapsed');
+ for(const id of ['capture-add','capture-edit','capture-done'])$('#'+id).disabled=!hasTitle;
+ $('#capture-clear').hidden=value.length===0;
+}
 $('#thought').addEventListener('input',updateCaptureActions);
-$('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
-$('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
+$('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').blur();});
+$('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;$('#thought').blur();const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
 // One activation route for every platform. No touch/pointer interception.
 $('#capture-add').addEventListener('click',e=>{e.preventDefault();captureThought(false);updateCaptureActions();});
 $('#capture-edit').addEventListener('click',e=>{e.preventDefault();captureThought(true);updateCaptureActions();});
@@ -500,12 +505,24 @@ function autoScroll(){
  if(delta||horizontal){scrollBoard(delta,horizontal);if(layout==='fixed'&&!drag.inDrawer)previewFixed(drag.x,drag.y);}
  drag.scrollFrame=requestAnimationFrame(autoScroll);
 }
-$('#grid').addEventListener('pointerdown',e=>{if(drag||e.button!==0||e.target.closest('[data-select], [data-preset-edit]'))return;const tile=e.target.closest('.tile');if(!tile)return;drag={id:tile.dataset.id,pointer:e.pointerId,type:e.pointerType,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastY:e.clientY,lastX:e.clientX,active:false,moved:false,changed:false};drag.timer=setTimeout(beginDrag,320);});
+// Native click opens a tile only after an unmoved tap finishes.
+// Opening on pointerup lets WebKit's following click land inside the new dialog.
+let pendingTileClick=null;
+$('#grid').addEventListener('pointerdown',e=>{pendingTileClick=null;if(drag||e.button!==0||e.target.closest('[data-select], [data-preset-edit]'))return;const tile=e.target.closest('.tile');if(!tile)return;drag={id:tile.dataset.id,pointer:e.pointerId,type:e.pointerType,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastY:e.clientY,lastX:e.clientX,active:false,moved:false,changed:false};drag.timer=setTimeout(beginDrag,320);});
 document.addEventListener('pointermove',e=>{if(!drag||drag.pointer!==e.pointerId)return;drag.x=e.clientX;drag.y=e.clientY;const distance=Math.hypot(drag.x-drag.startX,drag.y-drag.startY);if(!drag.active){if(distance>8){if(drag.type==='mouse')beginDrag();else{clearTimeout(drag.timer);drag.moved=true;scrollBoard(drag.lastY-drag.y,layout==='fixed'?drag.lastX-drag.x:0);}}drag.lastY=drag.y;drag.lastX=drag.x;return;}e.preventDefault();positionGhost();const {point,hit}=dragHit();if(drag.trayClosed){if(layout==='fixed')previewFixed(drag.x,drag.y);return;}const inDrawer=enterDrawer(hit);if(hoverTrayControl(hit))return;const attr=hit?.closest('[data-attribute]');if(attr){const key=trayMode+':'+attr.dataset.attribute;if(drag.hoverKey!==key){clearHover();drag.hoverKey=key;attr.classList.add('hover');if(trayMode==='size'){drag.pendingSize=attr.dataset.attribute;drag.hoverTimer=setTimeout(()=>{if(drag?.active&&drag.hoverKey===key){applyAttribute(attr);}},1000);}else{drag.pendingSize=null;drag.hoverTimer=setTimeout(()=>applyAttribute(attr),650);}}return;}clearHover();drag.pendingSize=null;if(inDrawer||groupDrag())return;if(layout==='fixed'){previewFixed(drag.x,drag.y);return;}const target=hit?.closest('.tile');document.querySelectorAll('#grid .flow-drop-target').forEach(t=>{if(t!==target)t.classList.remove('flow-drop-target');});if(!target||target.dataset.id===drag.id)return;target.classList.add('flow-drop-target');const r=target.getBoundingClientRect();const after=layout==='smash'?point.y>r.top+r.height/2:point.y>r.top+r.height*.7||(point.y>=r.top+r.height*.3&&point.x>r.left+r.width/2);const old=state.order.indexOf(drag.id);state.order.splice(old,1);const idx=state.order.indexOf(target.dataset.id);state.order.splice(idx+(after?1:0),0,drag.id);if(state.order.indexOf(drag.id)!==old){drag.changed=true;renderGrid();}}, {passive:false});
-function endDrag(e,cancel=false){document.querySelectorAll('#grid .flow-drop-target').forEach(t=>t.classList.remove('flow-drop-target'));if(!drag||e.pointerId!==drag.pointer)return;clearTimeout(drag.timer);const d=drag;if(d.active){const {point,hit}=dragHit();if(hit?.closest('#tray-close')){ /* CLOSE is a dwell target, not a cancel/drop target. */ }if(hit?.closest('#tray-delete')){if(groupDrag()){deleteDragGroup();}else{removeStages([d.id]);d.groupDeleted=true;persist();message('Tile deleted.',d.before);}if(d.groupDeleted){finishDeletedDrag();return;}cancel=true;}cancel=cancel||!!hit?.closest('#never-mind');const attr=d.trayClosed?null:hit?.closest('[data-attribute]'),inDrawer=!d.trayClosed&&!!hit?.closest('#tray');if(!cancel){if(attr)applyAttribute(attr);if(inDrawer||attr)state.order=d.before.order.slice();else if(layout==='fixed'){const candidate=fixedCandidateAt(d.x,d.y);d.fixedRejected=!!candidate&&!candidate.valid;if(candidate?.valid){const i=get(d.id);if(i.fixed.col!==candidate.col||i.fixed.row!==candidate.row){placeFixed(i,candidate);d.changed=true;}}}}clearFixedPreview();clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost.remove();d.crosshair?.remove();$('#tray').classList.remove('tray-yielded');$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;if(cancel){state=d.before;render();message('Never mind. Tile restored.');}else{persist();render();if(d.changed)message(inDrawer||attr?'Choices saved. Tile returned to its original position.':'Position and attributes saved.',d.before);if(d.fixedRejected)message('Occupied space. Tile kept its original position.',d.changed?d.before:null);if(d.pendingDate)startDateEdit(d.id,d.before);}}else{drag=null;if(!cancel&&!d.moved){const tile=get(d.id);if(tile?.preset)recallPreset(tile);else openEditor(d.id);}}}
+function endDrag(e,cancel=false){document.querySelectorAll('#grid .flow-drop-target').forEach(t=>t.classList.remove('flow-drop-target'));if(!drag||e.pointerId!==drag.pointer)return;clearTimeout(drag.timer);const d=drag;pendingTileClick=null;if(d.active){const {point,hit}=dragHit();if(hit?.closest('#tray-close')){ /* CLOSE is a dwell target, not a cancel/drop target. */ }if(hit?.closest('#tray-delete')){if(groupDrag()){deleteDragGroup();}else{removeStages([d.id]);d.groupDeleted=true;persist();message('Tile deleted.',d.before);}if(d.groupDeleted){finishDeletedDrag();return;}cancel=true;}cancel=cancel||!!hit?.closest('#never-mind');const attr=d.trayClosed?null:hit?.closest('[data-attribute]'),inDrawer=!d.trayClosed&&!!hit?.closest('#tray');if(!cancel){if(attr)applyAttribute(attr);if(inDrawer||attr)state.order=d.before.order.slice();else if(layout==='fixed'){const candidate=fixedCandidateAt(d.x,d.y);d.fixedRejected=!!candidate&&!candidate.valid;if(candidate?.valid){const i=get(d.id);if(i.fixed.col!==candidate.col||i.fixed.row!==candidate.row){placeFixed(i,candidate);d.changed=true;}}}}clearFixedPreview();clearHover();cancelAnimationFrame(d.scrollFrame);d.ghost.remove();d.crosshair?.remove();$('#tray').classList.remove('tray-yielded');$('#tray').hidden=true;document.body.classList.remove('dragging');drag=null;if(cancel){state=d.before;render();message('Never mind. Tile restored.');}else{persist();render();if(d.changed)message(inDrawer||attr?'Choices saved. Tile returned to its original position.':'Position and attributes saved.',d.before);if(d.fixedRejected)message('Occupied space. Tile kept its original position.',d.changed?d.before:null);if(d.pendingDate)startDateEdit(d.id,d.before);}}else{drag=null;if(!cancel&&!d.moved)pendingTileClick=d.id;}}
 document.addEventListener('pointerup',e=>endDrag(e));document.addEventListener('pointercancel',e=>endDrag(e,true));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag)endDrag({pointerId:drag.pointer,clientX:drag.x,clientY:drag.y},true);});
 $('#attributes').addEventListener('click',e=>{const button=e.target.closest('[data-attribute]');if(button)applyAttribute(button);});
-$('#grid').addEventListener('click',e=>{const edit=e.target.closest('[data-preset-edit]');if(edit){e.preventDefault();e.stopPropagation();const i=get(edit.dataset.presetEdit);if(i?.preset)openEditor(i.id);return;}if(e.detail===0){const tile=e.target.closest('.tile');if(tile){const i=get(tile.dataset.id);if(i?.preset)recallPreset(i);else openEditor(tile.dataset.id);}}});$('#grid').addEventListener('contextmenu',e=>{const tile=e.target.closest('.tile');if(tile){e.preventDefault();const i=get(tile.dataset.id);if(i?.preset)openEditor(i.id);}});
+$('#grid').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-preset-edit]');
+ if(edit){pendingTileClick=null;e.preventDefault();e.stopPropagation();const i=get(edit.dataset.presetEdit);if(i?.preset)openEditor(i.id);return;}
+ if(e.target.closest('[data-select]')){pendingTileClick=null;return;}
+ const tile=e.target.closest('.tile');if(!tile)return;
+ const id=tile.dataset.id,activate=e.detail===0||pendingTileClick===id;
+ pendingTileClick=null;if(!activate)return;
+ const i=get(id);if(!i)return;
+ if(i.preset)recallPreset(i);else openEditor(id);
+});$('#grid').addEventListener('contextmenu',e=>{const tile=e.target.closest('.tile');if(tile){e.preventDefault();const i=get(tile.dataset.id);if(i?.preset)openEditor(i.id);}});
 // The same capture and read actions are available in browsers supporting WebMCP.
 if(document.modelContext?.registerTool){for(const tool of [{name:'list_onto_stages',description:'Read all ONTO stages and their visual order.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:true},execute:()=>clone(state)},{name:'capture_onto_stage',description:'Capture a new ONTO stage at the top of the board.',inputSchema:{type:'object',properties:{title:{type:'string',minLength:1,maxLength:240}},required:['title'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute:input=>{if(!input||typeof input.title!=='string'||!input.title.trim()||input.title.length>240||Object.keys(input).some(k=>k!=='title'))throw Error('Provide a title between 1 and 240 characters.');if(!canAddTiles())throw Error('Free ONTO allows 6 tiles.');const i=stage(input.title.trim());state.items.push(i);state.order.unshift(i.id);returnToNow();categoryFilter='';statusFilter='';whenFilter='';persist();render();return {id:i.id,title:i.title};}}]){try{Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{});}catch(e){}}}
 setInterval(()=>{if(!drag&&!$$('dialog').some(d=>d.open))renderGrid();},60000);
@@ -546,11 +563,11 @@ $('#manageform').onsubmit=e=>{e.preventDefault();collectManage();const error=dra
 function pruneBulkSelection(items){const ids=new Set(items.map(i=>i.id));for(const id of bulkSelection)if(layout!=='smash'||!ids.has(id))bulkSelection.delete(id);}
 function renderGroupStrip(){/* Selection is shown by checked boxes and the GROUP THERAPY hoverboard. */}
 $('#grid').addEventListener('change',e=>{if(!e.target.matches?.('[data-select]'))return;const id=e.target.dataset.select;if(e.target.checked)bulkSelection.add(id);else bulkSelection.delete(id);renderGrid();$(`[data-select="${id}"]`)?.focus();});
-normalize();render();measureGrid();requestAnimationFrame(()=>{const b=$('#board-scroll');if(b&&!fitBoard){b.scrollTop=0;b.scrollLeft=0;}});if(typeof ResizeObserver!=='undefined'){new ResizeObserver(measureGrid).observe($('#board-scroll'));}if(loadError)message('Could not read saved data. Import an export to recover it.');
+normalize();render();measureGrid();requestAnimationFrame(()=>{const b=$('#board-scroll');if(b&&!fitBoard){b.scrollTop=0;b.scrollLeft=0;}});if(typeof ResizeObserver!=='undefined'){new ResizeObserver(()=>requestAnimationFrame(measureGrid)).observe($('#board-scroll'));}if(loadError)message('Could not read saved data. Import an export to recover it.');
 
 function measureDock(){const dock=$('#bottom-dock');if(!dock.getBoundingClientRect||!document.documentElement?.style)return;document.documentElement.style.setProperty('--dock-height',dock.getBoundingClientRect().height+'px');if(fitBoard)measureGrid();}
 measureDock();if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureDock).observe($('#bottom-dock'));
-if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>requestAnimationFrame(measureGrid)).observe($('#capture'));
+if(typeof ResizeObserver!=='undefined'){const boardInsets=new ResizeObserver(()=>requestAnimationFrame(measureGrid));boardInsets.observe($('#capture'));boardInsets.observe($('#momentum-slot'));}
 
 window.addEventListener?.('resize',measureGrid);
 

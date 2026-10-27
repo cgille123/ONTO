@@ -14,8 +14,9 @@
     const expanded = dock.classList.toggle('dock-collapsed') === false;
     dockToggle.setAttribute('aria-expanded', String(expanded));
     dockToggle.setAttribute('aria-label', expanded ? 'Collapse view controls' : 'Expand view controls');
+    updateCaptureActions();
   });
-  const momentumSwitch=$('#onto-momentum-switch');const momentumSlot=$('#momentum-slot');const toggleMomentum=()=>{momentumSlot.hidden=!momentumSlot.hidden;momentumSwitch.setAttribute('aria-expanded',String(!momentumSlot.hidden));requestAnimationFrame(()=>{document.documentElement.style.setProperty('--momentum-offset',momentumSlot.hidden?'0px':(momentumSlot.getBoundingClientRect().height+28)+'px');});};momentumSwitch.addEventListener('click',toggleMomentum);
+  const momentumSwitch=$('#onto-momentum-switch');const momentumSlot=$('#momentum-slot');const toggleMomentum=()=>{momentumSlot.hidden=!momentumSlot.hidden;momentumSwitch.setAttribute('aria-expanded',String(!momentumSlot.hidden));requestAnimationFrame(measureGrid);};momentumSwitch.addEventListener('click',toggleMomentum);
   const storageLabel = $('#storage');
   if (storageLabel) storageLabel.textContent = 'Saved on this device · Export for a backup';
   // One export/import handler, with a validated recovery snapshot before replacement.
