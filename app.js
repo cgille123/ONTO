@@ -312,22 +312,31 @@ function updateCaptureActions(){const hasText=!!$('#thought').value.trim();for(c
 $('#thought').addEventListener('input',updateCaptureActions);
 $('#capture-clear').addEventListener('click',()=>{$('#thought').value='';updateCaptureActions();$('#thought').focus();});
 $('#capture-done').addEventListener('click',()=>{const text=$('#thought').value.trim();if(!text)return;const before=clone(state),m={id:uuid(),type:'win',text,title:'',at:new Date().toISOString(),stageId:null,nextIds:[]};state.moments.push(m);momentumToday=true;momentumDay=localDay();momentumSelection=m.id;persist();$('#thought').value='';updateCaptureActions();render();message('DONE! Count it.',before);});
-// Capture the initial touch before the iOS keyboard changes viewport geometry.
-// One handler only: desktop uses native submit; iOS uses the first pointer event.
-let captureTouchHandled=false;
-document.addEventListener('pointerdown',e=>{
- const button=e.target.closest?.('#capture-add, #capture-edit');
- if(!button||e.pointerType!=='touch'||button.hidden)return;
- e.preventDefault();
- captureTouchHandled=true;
- const edit=button.id==='capture-edit';
- captureThought(edit);
- updateCaptureActions();
-},true);
+// One action per user activation. Touch is handled before iOS moves the keyboard;
+// the subsequent synthetic click is suppressed only for that same button.
+const captureButtons=['capture-add','capture-edit'];
+for(const id of captureButtons){
+ const btn=$('#'+id);
+ let suppressClick=false;
+ btn.addEventListener('touchend',e=>{
+  if(btn.hidden||e.changedTouches.length!==1)return;
+  e.preventDefault();
+  suppressClick=true;
+  captureThought(id==='capture-edit');
+  updateCaptureActions();
+ },{passive:false});
+ btn.addEventListener('click',e=>{
+  e.preventDefault();
+  if(suppressClick){suppressClick=false;return;}
+  captureThought(id==='capture-edit');
+  updateCaptureActions();
+ });
+}
 $('#capture').addEventListener('submit',e=>{
  e.preventDefault();
- if(captureTouchHandled){captureTouchHandled=false;return;}
- captureThought(e.submitter?.id==='capture-edit');
+ // Enter from the keyboard submits ADD; buttons have their own handlers.
+ if(e.submitter?.id==='capture-edit'||e.submitter?.id==='capture-add')return;
+ captureThought(false);
  updateCaptureActions();
 });
 

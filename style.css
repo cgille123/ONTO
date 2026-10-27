@@ -1413,3 +1413,8 @@ body > main > .dock-buttons #disco-toggle[aria-pressed="true"]{color:#e8d8ff!imp
  .site-header #capture{height:88px!important;min-height:88px!important;}
  .site-header #capture .capture-input-wrap{top:auto!important;bottom:0!important;inset:auto 0 0 0!important;}
 }
+
+/* v26: DISCO is a bonus control inside the expanded DISPLAY card. */
+#bottom-dock .disco-footer{display:flex!important;justify-content:flex-start!important;margin:8px 0 0!important;padding:7px 0 0!important;border-top:1px solid #ffffff16!important;}
+#bottom-dock .disco-footer #disco-toggle{display:inline-block!important;position:relative!important;z-index:3!important;pointer-events:auto!important;touch-action:manipulation!important;min-height:30px!important;}
+/* Keep the existing approved hoverboard untouched. */
